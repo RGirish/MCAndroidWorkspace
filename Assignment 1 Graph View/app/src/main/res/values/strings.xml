@@ -1,8 +1,0 @@
-<resources>
-    <string name="app_name">CSE535GraphView</string>
-    <string-array name="sex">
-        <item>Choose Patient\'s Sex</item>
-        <item>Male</item>
-        <item>Female</item>
-    </string-array>
-</resources>
