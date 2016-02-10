@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">CSE535GraphView</string>
+    <string name="app_name">Assignment 1</string>
     <string-array name="sex">
         <item>Choose Patient\'s Sex</item>
         <item>Male</item>

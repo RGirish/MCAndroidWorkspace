@@ -1,3 +1,8 @@
 <resources>
-    <string name="app_name">Assignment 2 - Graph View with Sensor</string>
+    <string name="app_name">Assignment 2</string>
+    <string-array name="sex">
+        <item>Choose Patient\'s Sex</item>
+        <item>Male</item>
+        <item>Female</item>
+    </string-array>
 </resources>
