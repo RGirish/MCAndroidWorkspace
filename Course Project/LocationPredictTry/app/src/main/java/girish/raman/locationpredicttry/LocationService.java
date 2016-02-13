@@ -16,8 +16,11 @@ import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.util.Calendar;
 
 public class LocationService extends Service implements LocationListener {
@@ -30,12 +33,12 @@ public class LocationService extends Service implements LocationListener {
 
     @Override
     public void onCreate() {
-        db = openOrCreateDatabase("location.db", SQLiteDatabase.CREATE_IF_NECESSARY, null);
+        db = openOrCreateDatabase(Environment.getExternalStorageDirectory() + File.separator + "location.db", SQLiteDatabase.CREATE_IF_NECESSARY, null);
         LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
-        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 300000, 20, this);
+        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 600000, 0, this);
     }
 
     @Override
@@ -66,18 +69,14 @@ public class LocationService extends Service implements LocationListener {
         db.execSQL("INSERT INTO locationLog VALUES('" + dayOfWeek + "','" + hour + "','" + minute + "','" + latitude + "','" + longitude + "','" + speed + "');");
         Log.e("Updated", "Updated");
 
-        File file = new File(Environment.getExternalStorageDirectory() + File.separator + logFileName);
+        File logFile = new File(Environment.getExternalStorageDirectory() + File.separator + logFileName);
         FileWriter writer = null;
         try {
-            writer = new FileWriter(file);
-            writer.write(dayOfWeek + "_" + hour + "_" + minute + "_" + latitude + "_" + longitude + "_" + speed);
+            writer = new FileWriter(logFile, true);
+            writer.write(dayOfWeek + "_" + hour + "_" + minute + "_" + latitude + "_" + longitude + "_" + speed + "\n");
+            writer.close();
         } catch (IOException e) {
             e.printStackTrace();
-        } finally {
-            try {
-                writer.close();
-            } catch (IOException e) {
-            }
         }
     }
 
