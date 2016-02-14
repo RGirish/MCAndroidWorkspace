@@ -42,7 +42,7 @@ public class SensorService extends Service implements SensorEventListener {
             if ((inclination < 5 || inclination > 175)) {
                 position = "flat";
             }
-            if (!(inclination < 25 || inclination > 155) && position.equals("flat")) {
+            if (!(inclination < 25 || inclination > 155) && position.equals("flat") && !(8 <= event.values[2] && event.values[2] <= 13)) {
                 position = "notflat";
                 Toast.makeText(getApplicationContext(), "Device picked up!", Toast.LENGTH_SHORT).show();
             }

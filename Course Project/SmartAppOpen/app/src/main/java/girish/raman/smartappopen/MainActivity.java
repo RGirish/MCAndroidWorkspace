@@ -14,17 +14,4 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         startService(new Intent(this, SensorService.class));
     }
-
-    public void print(View view) {
-        TextView textView = (TextView) findViewById(R.id.text);
-        textView.setText("");
-        textView.append("minX " + SensorService.minX + "\n");
-        textView.append("maxX " + SensorService.maxX + "\n\n");
-
-        textView.append("minY " + SensorService.minY + "\n");
-        textView.append("maxY " + SensorService.maxY + "\n\n");
-
-        textView.append("minZ " + SensorService.minZ + "\n");
-        textView.append("maxZ " + SensorService.maxZ + "\n\n");
-    }
 }
