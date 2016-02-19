@@ -3,12 +3,16 @@ package girish.raman.assignment2_graphviewwithsensor;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -20,21 +24,15 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.URL;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -44,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        db = openOrCreateDatabase("assignment2.db", SQLiteDatabase.CREATE_IF_NECESSARY, null);
+        db = openOrCreateDatabase(Environment.getExternalStorageDirectory() + "/assignment2.db", SQLiteDatabase.CREATE_IF_NECESSARY, null);
         db.execSQL("CREATE TABLE IF NOT EXISTS sensorValues(time TEXT, x TEXT, y TEXT, z TEXT);");
 
         final Dialog dialog = new Dialog(this);
@@ -69,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
                 dialog.dismiss();
             }
         });
-        dialog.show();
+        //dialog.show();
 
         SensorService sensorService = new SensorService(this);
 
@@ -125,11 +123,31 @@ public class MainActivity extends AppCompatActivity {
 
     public void onClickUpload(View view) {
         UploadTask task = new UploadTask(this);
-        task.execute("https://impact.asu.edu/CSE535Spring16Folder/GKS/" + System.currentTimeMillis() + "_database.db");
+        task.execute("http://cse535gks.netai.net/upload_file_to_server.php");
     }
 
     public void onClickDownload(View view) {
 
+    }
+
+    public String streamToString(InputStream in) {
+        StringBuilder sb = new StringBuilder();
+        BufferedReader br = new BufferedReader(new InputStreamReader(in));
+        String read;
+        try {
+            while ((read = br.readLine()) != null) {
+                sb.append(read);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                br.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return sb.toString();
     }
 
     private class UploadTask extends AsyncTask<String, Integer, String> {
@@ -144,10 +162,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected String doInBackground(String... args) {
-            InputStream input = null;
-            OutputStream output = null;
-            HttpsURLConnection connection = null;
-            TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
+            /*TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
                 public X509Certificate[] getAcceptedIssuers() {
                     return null;
                 }
@@ -169,54 +184,90 @@ public class MainActivity extends AppCompatActivity {
                 HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
             } catch (KeyManagementException | NoSuchAlgorithmException e) {
                 e.printStackTrace();
-            }
-            try {
-                URL url = new URL(args[0]);
-                connection = (HttpsURLConnection) url.openConnection();
-                connection.connect();
-                if (connection.getResponseCode() != HttpsURLConnection.HTTP_OK) {
-                    return "Server returned HTTP " + connection.getResponseCode() + " " + connection.getResponseMessage();
-                }
+            }*/
 
-                output = connection.getOutputStream();
-                File file = new File(context.getFilesDir().getPath() + "/data/" + getApplicationContext().getPackageName() + "/databases/assignment2.db");
-                if (!file.exists()) {
-                    Log.e("File doesn't exist", "File doesn't exist");
+            HttpURLConnection connection = null;
+            DataOutputStream dos = null;
+            FileInputStream fileInputStream = null;
+            try {
+                int bytesRead, bytesAvailable, bufferSize;
+                byte[] buffer;
+                int maxBufferSize = 1024 * 1024;
+                File sourceFile = new File(Environment.getExternalStorageDirectory() + "/assignment2.db");
+                fileInputStream = new FileInputStream(sourceFile);
+
+                URL url = new URL(args[0]);
+                connection = (HttpURLConnection) url.openConnection();
+
+                /*
+                    Reference for Multipart Form Data format : https://www.w3.org/Protocols/rfc1341/7_2_Multipart.html
+                 */
+
+                connection.setRequestMethod("POST");
+                connection.setRequestProperty("Connection", "Keep-Alive");
+                connection.setRequestProperty("ENCTYPE", "multipart/form-data");
+                connection.setRequestProperty("Content-Type", "multipart/form-data;boundary=*****");
+                connection.setRequestProperty("theFile", "assignment2.db");
+
+                dos = new DataOutputStream(connection.getOutputStream());
+                dos.writeBytes("--*****\nContent-Disposition: form-data; name=\"theFile\";filename=\"assignment2.db\"\r\n");
+
+                bytesAvailable = fileInputStream.available();
+                bufferSize = Math.min(bytesAvailable, maxBufferSize);
+                buffer = new byte[bufferSize];
+                bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+                while (bytesRead > 0) {
+                    dos.write(buffer, 0, bufferSize);
+                    bytesAvailable = fileInputStream.available();
+                    bufferSize = Math.min(bytesAvailable, maxBufferSize);
+                    bytesRead = fileInputStream.read(buffer, 0, bufferSize);
                 }
-                input = new FileInputStream(file);
-                byte data[] = new byte[512];
-                int count;
-                while ((count = input.read(data)) != -1) {
-                    if (isCancelled()) {
-                        input.close();
-                        return null;
-                    }
-                    output.write(data, 0, count);
-                }
+                dos.writeBytes("\r\n--*****--\r\n");
+                return streamToString(connection.getInputStream());
+
+                /*int serverResponseCode = connection.getResponseCode();
+                String serverResponseMessage = connection.getResponseMessage();
+                Log.e("File Upload Response", serverResponseMessage + " " + serverResponseCode);*/
+
+                //if (serverResponseCode == 200) {
             } catch (Exception e) {
                 return e.toString();
             } finally {
                 try {
-                    if (output != null)
-                        output.close();
-                    if (input != null)
-                        input.close();
-                } catch (IOException ignored) {
+                    fileInputStream.close();
+                    dos.flush();
+                    dos.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-
                 if (connection != null)
                     connection.disconnect();
             }
-            return null;
         }
 
         @Override
         protected void onPostExecute(String result) {
             dialog.dismiss();
-            if (result != null) {
+            if (!result.startsWith("success")) {
+                Log.e("Errrror", result);
                 Toast.makeText(context, "Upload error: " + result, Toast.LENGTH_LONG).show();
             } else {
-                Toast.makeText(context, "File uploaded", Toast.LENGTH_LONG).show();
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                builder.setTitle(null)
+                        .setMessage("Database uploaded to http://cse535gks.netai.net/uploads/")
+                        .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.cancel();
+                            }
+                        })
+                        .setNegativeButton("View in Server", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://cse535gks.netai.net/uploads/"));
+                                startActivity(browserIntent);
+                            }
+                        }).show();
             }
         }
     }

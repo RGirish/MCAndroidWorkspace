@@ -8,6 +8,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
@@ -25,13 +26,13 @@ public class SensorService extends Service implements SensorEventListener {
         this.context = context;
         sensorManager = (SensorManager) context.getSystemService(SENSOR_SERVICE);
         sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_GAME);
-        db = context.openOrCreateDatabase("assignment2.db", SQLiteDatabase.CREATE_IF_NECESSARY, null);
+        db = context.openOrCreateDatabase(Environment.getExternalStorageDirectory() + "/assignment2.db", SQLiteDatabase.CREATE_IF_NECESSARY, null);
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
                 String s = String.valueOf(System.currentTimeMillis());
                 db.execSQL("INSERT INTO sensorValues VALUES('" + s + "','" + x + "','" + y + "','" + z + "');");
-                Log.e("XYZ", "X " + x + " Y " + y + " Z " + z);
+                //Log.e("XYZ", "X " + x + " Y " + y + " Z " + z);
                 new Handler().postDelayed(this, 1000);
             }
         }, 1000);
