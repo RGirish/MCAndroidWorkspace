@@ -23,7 +23,12 @@
         </activity>
 
         <service
-            android:name=".LocationService"
+            android:name=".LocationLogService"
+            android:enabled="true"
+            android:exported="true" />
+
+        <service
+            android:name=".LocationAnalyzeService"
             android:enabled="true"
             android:exported="true" />
     </application>

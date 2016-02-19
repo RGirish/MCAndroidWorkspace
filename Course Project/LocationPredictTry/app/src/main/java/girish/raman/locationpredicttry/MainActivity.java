@@ -1,28 +1,36 @@
 package girish.raman.locationpredicttry;
 
 import android.Manifest;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.location.Address;
+import android.location.Geocoder;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
+import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
-    final static String logFileName = "location_log.txt";
+    static ProgressDialog dialog;
     final int REQUEST_FINE_LOCATION = 100;
     final int REQUEST_EXTERNAL_STORAGE = 101;
+    SQLiteDatabase db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,12 +40,12 @@ public class MainActivity extends AppCompatActivity {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_EXTERNAL_STORAGE);
         } else {
-            createDatabaseAndFile();
+            createDatabase();
         }
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_FINE_LOCATION);
         } else {
-            Intent intent = new Intent(this, LocationService.class);
+            Intent intent = new Intent(this, LocationLogService.class);
             startService(intent);
         }
     }
@@ -50,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
                 if (!(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
                     Toast.makeText(MainActivity.this, "External Storage Access needed!", Toast.LENGTH_SHORT).show();
                 } else {
-                    createDatabaseAndFile();
+                    createDatabase();
                     if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                         ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_FINE_LOCATION);
                     }
@@ -61,40 +69,124 @@ public class MainActivity extends AppCompatActivity {
                 if (!(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
                     Toast.makeText(MainActivity.this, "GPS Access Permission needed!", Toast.LENGTH_SHORT).show();
                 } else {
-                    Intent intent = new Intent(this, LocationService.class);
+                    Intent intent = new Intent(this, LocationLogService.class);
                     startService(intent);
                 }
             }
         }
     }
 
-    private void createDatabaseAndFile() {
-        SQLiteDatabase db = openOrCreateDatabase(Environment.getExternalStorageDirectory() + File.separator + "location.db", SQLiteDatabase.CREATE_IF_NECESSARY, null);
-        db.execSQL("CREATE TABLE IF NOT EXISTS locationLog(dayOfWeek TEXT, hour TEXT, minute TEXT, latitude TEXT, longitude TEXT, speed TEXT);");
-
-        File file = new File(Environment.getExternalStorageDirectory() + File.separator + logFileName);
-        boolean fileCreated = false;
-        if (!file.exists()) {
-            try {
-                fileCreated = file.createNewFile();
-            } catch (IOException e) {
-                e.printStackTrace();
-            } finally {
-                if (!fileCreated)
-                    Toast.makeText(MainActivity.this, "Log File Not Created", Toast.LENGTH_LONG).show();
-                else {
-                    File logFile = new File(Environment.getExternalStorageDirectory() + File.separator + logFileName);
-                    FileWriter writer = null;
-                    try {
-                        writer = new FileWriter(logFile, true);
-                        writer.write("Log File Created\n");
-                        writer.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }
+    private void createDatabase() {
+        db = openOrCreateDatabase(Environment.getExternalStorageDirectory() + File.separator + "location.db", SQLiteDatabase.CREATE_IF_NECESSARY, null);
+        db.execSQL("CREATE TABLE IF NOT EXISTS locationLog(dayOfWeek TEXT, hour TEXT, minute TEXT, latitude TEXT, longitude TEXT, speed TEXT, address TEXT);");
     }
 
+    public void onClickSeeLoggedData(View view) {
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        dialog = ProgressDialog.show(MainActivity.this, null, "Please wait...", true);
+                    }
+                });
+
+                Cursor cursor = db.rawQuery("SELECT * FROM locationLog;", null);
+                cursor.moveToFirst();
+                final Map<String, Integer> uniqueLocations = new HashMap<>();
+
+                while (!cursor.isAfterLast()) {
+                    String fullAddress = cursor.getString(6);
+                    if (!uniqueLocations.containsKey(fullAddress)) {
+                        uniqueLocations.put(fullAddress, 1);
+                    } else {
+                        uniqueLocations.put(fullAddress, uniqueLocations.get(fullAddress) + 1);
+                    }
+                    cursor.moveToNext();
+                }
+                cursor.close();
+
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        TextView textView = (TextView) MainActivity.this.findViewById(R.id.logData);
+                        textView.setText("");
+                        for (Object o : uniqueLocations.entrySet()) {
+                            Map.Entry entry = (Map.Entry) o;
+                            Log.e(String.valueOf("     " + entry.getKey()), String.valueOf(entry.getValue()));
+                            textView.append(String.valueOf(entry.getKey()) + " - " + String.valueOf(entry.getValue()) + "\n\n");
+                        }
+                        dialog.dismiss();
+                    }
+                });
+
+            }
+        }).start();
+    }
+
+    public void setAddresses(View view) {
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+
+
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        dialog = ProgressDialog.show(MainActivity.this, null, "Please wait...", true);
+                    }
+                });
+
+                Cursor cursor = db.rawQuery("SELECT * FROM locationLog;", null);
+                cursor.moveToFirst();
+
+                Geocoder geocoder = new Geocoder(MainActivity.this, Locale.getDefault());
+                List<Address> addressList = null;
+
+                while (!cursor.isAfterLast()) {
+                    try {
+                        if (cursor.getString(6).equals("na") || cursor.getString(6).equals("")) {
+                            addressList = geocoder.getFromLocation(Double.parseDouble(cursor.getString(3)), Double.parseDouble(cursor.getString(4)), 1);
+                            Address addr = addressList.get(0);
+                            String address = addr.getAddressLine(0);
+                            String city = addr.getLocality();
+                            String state = addr.getAdminArea();
+                            String country = addr.getCountryName();
+                            String fullAddress = address + " " + city + " " + state + " " + country;
+
+                            String dayOfWeek = cursor.getString(0);
+                            String hour = cursor.getString(1);
+                            String minute = cursor.getString(2);
+
+                            db.execSQL("UPDATE locationLog SET address = '" + fullAddress + "' WHERE dayOfWeek = '" + dayOfWeek + "' AND hour = '" + hour + "' AND minute = '" + minute + "';");
+                        }
+                    } catch (final IOException e) {
+                        e.printStackTrace();
+                        Log.e("Exception in setAddresses", e.getMessage());
+                    }
+                    cursor.moveToNext();
+                }
+                Log.e("setAddresses", "Finished");
+                cursor.close();
+
+
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        dialog.dismiss();
+                    }
+                });
+
+
+            }
+        }).start();
+    }
+
+    public void analyze(View view) {
+        startService(new Intent(this, LocationAnalyzeService.class));
+    }
 }

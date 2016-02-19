@@ -16,16 +16,10 @@ import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.util.Calendar;
 
 public class LocationLogService extends Service implements LocationListener {
 
-    final static String logFileName = "location_log.txt";
     SQLiteDatabase db;
 
     public LocationLogService() {
@@ -68,30 +62,17 @@ public class LocationLogService extends Service implements LocationListener {
 
         db.execSQL("INSERT INTO locationLog VALUES('" + dayOfWeek + "','" + hour + "','" + minute + "','" + latitude + "','" + longitude + "','" + speed + "','na');");
         Log.e("Updated", "Updated");
-
-        File logFile = new File(Environment.getExternalStorageDirectory() + File.separator + logFileName);
-        FileWriter writer = null;
-        try {
-            writer = new FileWriter(logFile, true);
-            writer.write(dayOfWeek + "_" + hour + "_" + minute + "_" + latitude + "_" + longitude + "_" + speed + "\n");
-            writer.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     @Override
     public void onStatusChanged(String provider, int status, Bundle extras) {
-
     }
 
     @Override
     public void onProviderEnabled(String provider) {
-
     }
 
     @Override
     public void onProviderDisabled(String provider) {
-
     }
 }
