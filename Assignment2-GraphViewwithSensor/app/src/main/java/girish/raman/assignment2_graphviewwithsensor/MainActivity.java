@@ -28,6 +28,7 @@ import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -116,6 +117,48 @@ public class MainActivity extends AppCompatActivity {
         main.addView(graphViewZ);
     }
 
+    public void plotGraphWithDownloadedData() {
+        float[] xValues = new float[10];
+        float[] yValues = new float[10];
+        float[] zValues = new float[10];
+        int i = 0;
+        SQLiteDatabase db = openOrCreateDatabase(Environment.getExternalStorageDirectory().getPath() + File.separator + "assignment2_downloaded.db", SQLiteDatabase.CREATE_IF_NECESSARY, null);
+        Cursor cursor = db.rawQuery("SELECT * FROM sensorValues ORDER BY time DESC LIMIT 10;", null);
+        cursor.moveToFirst();
+        while (true) {
+            xValues[i] = Float.valueOf(cursor.getString(1));
+            yValues[i] = Float.valueOf(cursor.getString(2));
+            zValues[i] = Float.valueOf(cursor.getString(3));
+            i++;
+            cursor.moveToNext();
+            if (cursor.isAfterLast()) {
+                break;
+            }
+        }
+        cursor.close();
+
+        LinearLayout main = (LinearLayout) findViewById(R.id.main);
+        main.removeAllViews();
+
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 320);
+        params.setMargins(0, 20, 0, 20);
+
+        GraphView graphViewX = new GraphView(this, xValues, "X Values", new String[]{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}, new String[]{"10", "9", "8", "7", "6", "5", "4", "3", "2", "1"}, true);
+        graphViewX.setBackgroundColor(Color.BLACK);
+        graphViewX.setLayoutParams(params);
+        main.addView(graphViewX);
+
+        GraphView graphViewY = new GraphView(this, yValues, "Y Values", new String[]{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}, new String[]{"10", "9", "8", "7", "6", "5", "4", "3", "2", "1"}, true);
+        graphViewY.setBackgroundColor(Color.BLACK);
+        graphViewY.setLayoutParams(params);
+        main.addView(graphViewY);
+
+        GraphView graphViewZ = new GraphView(this, zValues, "Z Values", new String[]{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}, new String[]{"10", "9", "8", "7", "6", "5", "4", "3", "2", "1"}, true);
+        graphViewZ.setBackgroundColor(Color.BLACK);
+        graphViewZ.setLayoutParams(params);
+        main.addView(graphViewZ);
+    }
+
     public void onClickStop(View view) {
         LinearLayout main = (LinearLayout) findViewById(R.id.main);
         main.removeAllViews();
@@ -127,7 +170,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onClickDownload(View view) {
-
+        DownloadTask task = new DownloadTask(this);
+        task.execute("http://cse535gks.netai.net/uploads/assignment2.db");
     }
 
     public String streamToString(InputStream in) {
@@ -162,30 +206,6 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected String doInBackground(String... args) {
-            /*TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
-                public X509Certificate[] getAcceptedIssuers() {
-                    return null;
-                }
-
-                @Override
-                public void checkClientTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
-                    // Not implemented
-                }
-
-                @Override
-                public void checkServerTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
-                    // Not implemented
-                }
-            }};
-
-            try {
-                SSLContext sc = SSLContext.getInstance("TLS");
-                sc.init(null, trustAllCerts, new java.security.SecureRandom());
-                HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-            } catch (KeyManagementException | NoSuchAlgorithmException e) {
-                e.printStackTrace();
-            }*/
-
             HttpURLConnection connection = null;
             DataOutputStream dos = null;
             FileInputStream fileInputStream = null;
@@ -224,19 +244,17 @@ public class MainActivity extends AppCompatActivity {
                 }
                 dos.writeBytes("\r\n--*****--\r\n");
                 return streamToString(connection.getInputStream());
-
-                /*int serverResponseCode = connection.getResponseCode();
-                String serverResponseMessage = connection.getResponseMessage();
-                Log.e("File Upload Response", serverResponseMessage + " " + serverResponseCode);*/
-
-                //if (serverResponseCode == 200) {
             } catch (Exception e) {
                 return e.toString();
             } finally {
                 try {
-                    fileInputStream.close();
-                    dos.flush();
-                    dos.close();
+                    if (fileInputStream != null) {
+                        fileInputStream.close();
+                    }
+                    if (dos != null) {
+                        dos.flush();
+                        dos.close();
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -267,7 +285,96 @@ public class MainActivity extends AppCompatActivity {
                                 Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://cse535gks.netai.net/uploads/"));
                                 startActivity(browserIntent);
                             }
-                        }).show();
+                        })
+                        .setCancelable(false)
+                        .show();
+            }
+        }
+    }
+
+    private class DownloadTask extends AsyncTask<String, Integer, String> {
+
+        ProgressDialog dialog;
+        Context context;
+
+        public DownloadTask(Context context) {
+            this.context = context;
+            dialog = ProgressDialog.show(context, null, "Downloading. Please wait...", true);
+        }
+
+        @Override
+        protected String doInBackground(String... args) {
+            HttpURLConnection connection = null;
+            InputStream inputStream = null;
+            FileOutputStream fileOutputStream = null;
+            try {
+                File sourceFile = new File(Environment.getExternalStorageDirectory() + "/assignment2_downloaded.db");
+                if (!sourceFile.exists()) {
+                    if (!sourceFile.createNewFile()) {
+                        Toast.makeText(context, "File Creation Error!", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    sourceFile.delete();
+                }
+
+                fileOutputStream = new FileOutputStream(sourceFile);
+                URL url = new URL(args[0]);
+                connection = (HttpURLConnection) url.openConnection();
+                if (connection.getResponseCode() == HttpURLConnection.HTTP_NOT_FOUND) {
+                    return "nofile";
+                } else if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                    byte[] buffer = new byte[1024];
+                    inputStream = connection.getInputStream();
+                    while (inputStream.read(buffer) > 0) {
+                        fileOutputStream.write(buffer);
+                    }
+                    return "success";
+                }
+            } catch (Exception e) {
+                return e.toString();
+            } finally {
+                try {
+                    if (fileOutputStream != null) {
+                        fileOutputStream.close();
+                    }
+                    if (inputStream != null) {
+                        inputStream.close();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            dialog.dismiss();
+            if (result == null) {
+                Log.e("DownloadTask - onPostExecute()", "Null result");
+                Toast.makeText(context, "Download error. Try again!", Toast.LENGTH_SHORT).show();
+            } else if (result.equals("nofile")) {
+                Log.e("DownloadTask - onPostExecute()", "No Database backup in Server!");
+                Toast.makeText(context, "No Database backup in Server!", Toast.LENGTH_SHORT).show();
+            } else if (result.equals("success")) {
+                Log.e("DownloadTask - onPostExecute()", "Database backup downloaded successfully!");
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                builder.setTitle(null)
+                        .setMessage("Database downloaded to Phone Storage!")
+                        .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.cancel();
+                            }
+                        })
+                        .setNegativeButton("Plot the Graph with new data", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                plotGraphWithDownloadedData();
+                            }
+                        })
+                        .setCancelable(false)
+                        .show();
             }
         }
     }

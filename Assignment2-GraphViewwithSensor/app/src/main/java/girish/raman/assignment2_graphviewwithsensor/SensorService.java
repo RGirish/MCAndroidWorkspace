@@ -32,7 +32,6 @@ public class SensorService extends Service implements SensorEventListener {
             public void run() {
                 String s = String.valueOf(System.currentTimeMillis());
                 db.execSQL("INSERT INTO sensorValues VALUES('" + s + "','" + x + "','" + y + "','" + z + "');");
-                //Log.e("XYZ", "X " + x + " Y " + y + " Z " + z);
                 new Handler().postDelayed(this, 1000);
             }
         }, 1000);
