@@ -2,7 +2,10 @@ package girish.raman.locationpredicttry;
 
 import android.Manifest;
 import android.app.ProgressDialog;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -12,6 +15,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -48,6 +52,18 @@ public class MainActivity extends AppCompatActivity {
             Intent intent = new Intent(this, LocationLogService.class);
             startService(intent);
         }
+
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+                new BroadcastReceiver() {
+                    @Override
+                    public void onReceive(Context context, Intent intent) {
+                        if(dialog.isShowing()){
+                            dialog.dismiss();
+                        }
+                        ((TextView) findViewById(R.id.logData)).setText(intent.getStringExtra("locationAnalysisData"));
+                    }
+                }, new IntentFilter(LocationAnalyzeService.LOCATION_ANALYSIS_RESULT_BROADCAST)
+        );
     }
 
     @Override
@@ -187,6 +203,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void analyze(View view) {
+        dialog = ProgressDialog.show(MainActivity.this, null, "Please wait...", true);
         startService(new Intent(this, LocationAnalyzeService.class));
+    }
+
+    public void changeTo710(View view) {
+        db.execSQL("UPDATE locationLog set address = '710 Hardy Dr Tempe Arizona United States' WHERE address = '409 S Westfall Ave Tempe Arizona United States';");
+        db.execSQL("UPDATE locationLog set address = '710 Hardy Dr Tempe Arizona United States' WHERE address = 'W Apartment Tempe Arizona United States';");
     }
 }
