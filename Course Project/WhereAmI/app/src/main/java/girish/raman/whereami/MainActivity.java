@@ -87,4 +87,13 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
             Log.e("TTS", "Initilization Failed!");
         }
     }
+
+    @Override
+    protected void onDestroy() {
+        if (tts != null) {
+            tts.stop();
+            tts.shutdown();
+        }
+        super.onDestroy();
+    }
 }
