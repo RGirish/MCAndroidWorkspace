@@ -47,10 +47,11 @@ public class LocationLogService extends Service implements LocationListener {
 
     @Override
     public void onLocationChanged(Location location) {
-        String speed, latitude, longitude, dayOfWeek, hour, minute;
+        String speed, latitude, longitude, dayOfWeek, hour, minute, day, month, accuracy;
 
         latitude = String.valueOf(location.getLatitude());
         longitude = String.valueOf(location.getLongitude());
+        accuracy = String.valueOf(location.getAccuracy());
         speed = "none";
         if (location.hasSpeed())
             speed = String.valueOf(location.getSpeed());
@@ -59,8 +60,10 @@ public class LocationLogService extends Service implements LocationListener {
         dayOfWeek = String.valueOf(calendar.get(Calendar.DAY_OF_WEEK));
         hour = String.valueOf(calendar.get(Calendar.HOUR_OF_DAY));
         minute = String.valueOf(calendar.get(Calendar.MINUTE));
+        day = String.valueOf(calendar.get(Calendar.DAY_OF_MONTH));
+        month = String.valueOf(calendar.get(Calendar.MONTH));
 
-        db.execSQL("INSERT INTO locationLog VALUES('" + dayOfWeek + "','" + hour + "','" + minute + "','" + latitude + "','" + longitude + "','" + speed + "','na');");
+        db.execSQL("INSERT INTO locationLog VALUES('" + dayOfWeek + "','" + hour + "','" + minute + "','" + latitude + "','" + longitude + "','" + speed + "','na','" + day + "','" + month + "', '" + accuracy + "');");
         Log.e("Updated", "Updated");
     }
 

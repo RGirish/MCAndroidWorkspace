@@ -15,22 +15,36 @@
             android:text="See Logged Data" />
 
         <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:onClick="setAddresses"
-            android:text="Set Addresses"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            android:text="Set Addresses" />
 
-        <Button
-            android:onClick="analyze"
-            android:text="Analyze"
+        <!--<Button
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-
-        <Button
+            android:layout_height="wrap_content"
             android:onClick="changeTo710"
-            android:text="Change to 710"
+            android:text="Change to 710" />-->
+
+        <EditText
+            android:id="@+id/dayOfWeek"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:hint="Day Of Week"
+            android:inputType="number" />
+
+        <EditText
+            android:id="@+id/day"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:hint="Day"
+            android:inputType="number" />
+
+        <Button
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:onClick="analyze"
+            android:text="Analyze" />
 
         <TextView
             android:id="@+id/logData"

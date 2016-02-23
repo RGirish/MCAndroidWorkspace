@@ -24,6 +24,7 @@ import android.widget.Toast;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -57,13 +58,28 @@ public class MainActivity extends AppCompatActivity {
                 new BroadcastReceiver() {
                     @Override
                     public void onReceive(Context context, Intent intent) {
-                        if(dialog.isShowing()){
+                        if (dialog.isShowing()) {
                             dialog.dismiss();
                         }
                         ((TextView) findViewById(R.id.logData)).setText(intent.getStringExtra("locationAnalysisData"));
                     }
                 }, new IntentFilter(LocationAnalyzeService.LOCATION_ANALYSIS_RESULT_BROADCAST)
         );
+        try {
+            /*db.execSQL("ALTER TABLE locationLog ADD accuracy TEXT;");
+            db.execSQL("ALTER TABLE locationLog ADD day TEXT;");
+            db.execSQL("ALTER TABLE locationLog ADD month TEXT;");
+            db.execSQL("UPDATE locationLog set month = '1';");
+            db.execSQL("UPDATE locationLog set day = '14' WHERE dayOfWeek = '1';");
+            db.execSQL("UPDATE locationLog set day = '15' WHERE dayOfWeek = '2';");
+            db.execSQL("UPDATE locationLog set day = '16' WHERE dayOfWeek = '3';");
+            db.execSQL("UPDATE locationLog set day = '17' WHERE dayOfWeek = '4';");
+            db.execSQL("UPDATE locationLog set day = '18' WHERE dayOfWeek = '5';");
+            db.execSQL("UPDATE locationLog set day = '19' WHERE dayOfWeek = '6';");
+            db.execSQL("UPDATE locationLog set day = '20' WHERE dayOfWeek = '7';");*/
+        } catch (Exception e) {
+            Log.e("Ex", e.getMessage());
+        }
     }
 
     @Override
@@ -94,7 +110,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void createDatabase() {
         db = openOrCreateDatabase(Environment.getExternalStorageDirectory() + File.separator + "location.db", SQLiteDatabase.CREATE_IF_NECESSARY, null);
-        db.execSQL("CREATE TABLE IF NOT EXISTS locationLog(dayOfWeek TEXT, hour TEXT, minute TEXT, latitude TEXT, longitude TEXT, speed TEXT, address TEXT);");
+        db.execSQL("CREATE TABLE IF NOT EXISTS locationLog(dayOfWeek TEXT, hour TEXT, minute TEXT, latitude TEXT, longitude TEXT, speed TEXT, address TEXT, day TEXT, month TEXT, accuracy TEXT);");
     }
 
     public void onClickSeeLoggedData(View view) {
@@ -132,7 +148,6 @@ public class MainActivity extends AppCompatActivity {
                         textView.setText("");
                         for (Object o : uniqueLocations.entrySet()) {
                             Map.Entry entry = (Map.Entry) o;
-                            Log.e(String.valueOf("     " + entry.getKey()), String.valueOf(entry.getValue()));
                             textView.append(String.valueOf(entry.getKey()) + " - " + String.valueOf(entry.getValue()) + "\n\n");
                         }
                         dialog.dismiss();
@@ -186,7 +201,6 @@ public class MainActivity extends AppCompatActivity {
                     }
                     cursor.moveToNext();
                 }
-                Log.e("setAddresses", "Finished");
                 cursor.close();
 
 
@@ -204,7 +218,10 @@ public class MainActivity extends AppCompatActivity {
 
     public void analyze(View view) {
         dialog = ProgressDialog.show(MainActivity.this, null, "Please wait...", true);
-        startService(new Intent(this, LocationAnalyzeService.class));
+        Intent intent = new Intent(this, LocationAnalyzeService.class);
+        intent.putExtra("dayOfWeek", Integer.parseInt(((TextView)findViewById(R.id.dayOfWeek)).getText().toString()));
+        intent.putExtra("day", Integer.parseInt(((TextView)findViewById(R.id.day)).getText().toString()));
+        startService(intent);
     }
 
     public void changeTo710(View view) {

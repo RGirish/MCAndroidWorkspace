@@ -11,7 +11,6 @@ import android.util.Log;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 
 public class LocationAnalyzeService extends Service {
@@ -23,13 +22,18 @@ public class LocationAnalyzeService extends Service {
     }
 
     @Override
-    public void onCreate() {
-        db = openOrCreateDatabase(Environment.getExternalStorageDirectory() + File.separator + "location.db", SQLiteDatabase.CREATE_IF_NECESSARY, null);
-        startAnalysis(Calendar.MONDAY);
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        startAnalysis(intent.getIntExtra("dayOfWeek", 0), intent.getIntExtra("day", 0));
+        return super.onStartCommand(intent, flags, startId);
     }
 
-    private void startAnalysis(int dayOfWeek) {
-        Cursor cursor = db.rawQuery("SELECT hour, minute,address FROM locationLog WHERE dayOfWeek = '" + dayOfWeek + "';", null);
+    @Override
+    public void onCreate() {
+        db = openOrCreateDatabase(Environment.getExternalStorageDirectory() + File.separator + "location.db", SQLiteDatabase.CREATE_IF_NECESSARY, null);
+    }
+
+    private void startAnalysis(int dayOfWeek, int day) {
+        Cursor cursor = db.rawQuery("SELECT hour, minute,address FROM locationLog WHERE dayOfWeek = '" + dayOfWeek + "' AND day = '" + day + "';", null);
         cursor.moveToFirst();
         //Map<String, Boolean> history = new LinkedHashMap<>();
         List<String> historyOfOut = new ArrayList<>();
@@ -41,7 +45,7 @@ public class LocationAnalyzeService extends Service {
             currAddress = cursor.getString(2);
             String hour_minute = cursor.getString(0) + ":" + cursor.getString(1);
             if (!currAddress.equals(prevAddress)) {
-                int i;
+                int i = 0;
                 //prevAddress not updated in this for loop - it will contain addressBeforeGoingOut
                 for (i = 0; i < 4 && !currAddress.equals(prevAddress); ++i) {
                     currAddress = cursor.getString(2);
@@ -49,6 +53,26 @@ public class LocationAnalyzeService extends Service {
                 }
                 if (i == 4) {
                     historyOfOut.add(hour_minute);
+                    for (int i1 = 0; i1 < i; i1++) {
+                        cursor.moveToPrevious();
+                    }
+                    int continuousCount = 0;
+                    currAddress = cursor.getString(2);
+                    while (continuousCount < 5) {
+                        prevAddress = currAddress;
+                        currAddress = cursor.getString(2);
+                        if (prevAddress.equals(currAddress)) {
+                            continuousCount++;
+                        } else {
+                            continuousCount = 0;
+                        }
+                        cursor.moveToNext();
+                    }
+                    cursor.moveToPrevious();
+                } else {
+                    for (int i1 = 0; i1 < i; i1++) {
+                        cursor.moveToPrevious();
+                    }
                 }
             }
             //history.put(hour_minute, currAddress.equals(prevAddress));
