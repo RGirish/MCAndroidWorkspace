@@ -160,60 +160,6 @@ public class MainActivity extends AppCompatActivity {
 
     public void setAddresses(View view) {
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-
-
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        dialog = ProgressDialog.show(MainActivity.this, null, "Please wait...", true);
-                    }
-                });
-
-                Cursor cursor = db.rawQuery("SELECT * FROM locationLog;", null);
-                cursor.moveToFirst();
-
-                Geocoder geocoder = new Geocoder(MainActivity.this, Locale.getDefault());
-                List<Address> addressList = null;
-
-                while (!cursor.isAfterLast()) {
-                    try {
-                        if (cursor.getString(6).equals("na") || cursor.getString(6).equals("")) {
-                            addressList = geocoder.getFromLocation(Double.parseDouble(cursor.getString(3)), Double.parseDouble(cursor.getString(4)), 1);
-                            Address addr = addressList.get(0);
-                            String address = addr.getAddressLine(0);
-                            String city = addr.getLocality();
-                            String state = addr.getAdminArea();
-                            String country = addr.getCountryName();
-                            String fullAddress = address + " " + city + " " + state + " " + country;
-
-                            String dayOfWeek = cursor.getString(0);
-                            String hour = cursor.getString(1);
-                            String minute = cursor.getString(2);
-
-                            db.execSQL("UPDATE locationLog SET address = '" + fullAddress + "' WHERE dayOfWeek = '" + dayOfWeek + "' AND hour = '" + hour + "' AND minute = '" + minute + "';");
-                        }
-                    } catch (final IOException e) {
-                        e.printStackTrace();
-                        Log.e("Exception in setAddresses", e.getMessage());
-                    }
-                    cursor.moveToNext();
-                }
-                cursor.close();
-
-
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        dialog.dismiss();
-                    }
-                });
-
-
-            }
-        }).start();
     }
 
     public void analyze(View view) {

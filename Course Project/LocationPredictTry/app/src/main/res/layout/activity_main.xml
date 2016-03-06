@@ -14,11 +14,11 @@
             android:onClick="onClickSeeLoggedData"
             android:text="See Logged Data" />
 
-        <Button
+        <!--<Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:onClick="setAddresses"
-            android:text="Set Addresses" />
+            android:text="Set Addresses" />-->
 
         <!--<Button
             android:layout_width="wrap_content"
