@@ -1,10 +1,12 @@
 package girish.raman.assignment2_graphviewwithsensor;
 
+import android.Manifest;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
@@ -12,6 +14,9 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -37,15 +42,30 @@ import java.net.URL;
 
 public class MainActivity extends AppCompatActivity {
 
+    private static final int WRITE_EXTERNAL_STORAGE = 101;
     static SQLiteDatabase db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        db = openOrCreateDatabase(Environment.getExternalStorageDirectory() + "/assignment2.db", SQLiteDatabase.CREATE_IF_NECESSARY, null);
-        db.execSQL("CREATE TABLE IF NOT EXISTS sensorValues(time TEXT, x TEXT, y TEXT, z TEXT);");
 
+        if (hasPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+            setupDatabase();
+            showDialogBox();
+            startSensorService();
+        } else {
+            askForPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE);
+        }
+    }
+
+    private void startSensorService() {
+        SensorService sensorService = new SensorService(this);
+        Intent intent = new Intent(this, SensorService.class);
+        startService(intent);
+    }
+
+    private void showDialogBox() {
         final Dialog dialog = new Dialog(this);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setContentView(R.layout.dialog);
@@ -69,11 +89,43 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         //dialog.show();
+    }
 
-        SensorService sensorService = new SensorService(this);
+    private boolean hasPermission(String permission) {
+        return ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED;
+    }
 
-        Intent intent = new Intent(this, SensorService.class);
-        startService(intent);
+    private void askForPermission(String permission, int permissionID) {
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this, permission)) {
+            Toast.makeText(MainActivity.this, "External Storage Access Permission Needed!", Toast.LENGTH_SHORT).show();
+        } else {
+            ActivityCompat.requestPermissions(this, new String[]{permission}, permissionID);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case WRITE_EXTERNAL_STORAGE: {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    setupDatabase();
+                    showDialogBox();
+                    startSensorService();
+                } else {
+                    hideButtons();
+                    Toast.makeText(MainActivity.this, "External Storage Access Permission Needed!", Toast.LENGTH_SHORT).show();
+                }
+            }
+        }
+    }
+
+    private void hideButtons() {
+        findViewById(R.id.hsv).setVisibility(View.GONE);
+    }
+
+    private void setupDatabase() {
+        db = openOrCreateDatabase(Environment.getExternalStorageDirectory() + "/assignment2_gks.db", SQLiteDatabase.CREATE_IF_NECESSARY, null);
+        db.execSQL("CREATE TABLE IF NOT EXISTS sensorValues(time TEXT, x TEXT, y TEXT, z TEXT);");
     }
 
     public void onClickRun(View view) {
@@ -122,7 +174,15 @@ public class MainActivity extends AppCompatActivity {
         float[] yValues = new float[10];
         float[] zValues = new float[10];
         int i = 0;
-        SQLiteDatabase db = openOrCreateDatabase(Environment.getExternalStorageDirectory().getPath() + File.separator + "assignment2_downloaded.db", SQLiteDatabase.CREATE_IF_NECESSARY, null);
+
+        /*
+
+        assignment2_gks_downloaded.db does not contain the sensorValues table!!
+
+         */
+
+
+        SQLiteDatabase db = openOrCreateDatabase(Environment.getExternalStorageDirectory().getPath() + File.separator + "assignment2_gks_downloaded.db", SQLiteDatabase.CREATE_IF_NECESSARY, null);
         Cursor cursor = db.rawQuery("SELECT * FROM sensorValues ORDER BY time DESC LIMIT 10;", null);
         cursor.moveToFirst();
         while (true) {
@@ -165,13 +225,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onClickUpload(View view) {
+        LinearLayout main = (LinearLayout) findViewById(R.id.main);
+        main.removeAllViews();
         UploadTask task = new UploadTask(this);
         task.execute("http://cse535gks.netai.net/upload_file_to_server.php");
+        //task.execute("https://impact.asu.edu/CSE535Spring16Folder/UploadToServer.php");
     }
 
     public void onClickDownload(View view) {
+        LinearLayout main = (LinearLayout) findViewById(R.id.main);
+        main.removeAllViews();
         DownloadTask task = new DownloadTask(this);
-        task.execute("http://cse535gks.netai.net/uploads/assignment2.db");
+        task.execute("http://cse535gks.netai.net/uploaded_files/assignment2_gks.db");
     }
 
     public String streamToString(InputStream in) {
@@ -213,7 +278,7 @@ public class MainActivity extends AppCompatActivity {
                 int bytesRead, bytesAvailable, bufferSize;
                 byte[] buffer;
                 int maxBufferSize = 1024 * 1024;
-                File sourceFile = new File(Environment.getExternalStorageDirectory() + "/assignment2.db");
+                File sourceFile = new File(Environment.getExternalStorageDirectory() + "/assignment2_gks.db");
                 fileInputStream = new FileInputStream(sourceFile);
 
                 URL url = new URL(args[0]);
@@ -227,10 +292,10 @@ public class MainActivity extends AppCompatActivity {
                 connection.setRequestProperty("Connection", "Keep-Alive");
                 connection.setRequestProperty("ENCTYPE", "multipart/form-data");
                 connection.setRequestProperty("Content-Type", "multipart/form-data;boundary=*****");
-                connection.setRequestProperty("theFile", "assignment2.db");
+                connection.setRequestProperty("theFile", "assignment2_gks.db");
 
                 dos = new DataOutputStream(connection.getOutputStream());
-                dos.writeBytes("--*****\nContent-Disposition: form-data; name=\"theFile\";filename=\"assignment2.db\"\r\n");
+                dos.writeBytes("--*****\nContent-Disposition: form-data; name=\"theFile\";filename=\"assignment2_gks.db\"\r\n");
 
                 bytesAvailable = fileInputStream.available();
                 bufferSize = Math.min(bytesAvailable, maxBufferSize);
@@ -272,7 +337,7 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
                 builder.setTitle(null)
-                        .setMessage("Database uploaded to http://cse535gks.netai.net/uploads/")
+                        .setMessage("Database uploaded to http://cse535gks.netai.net/uploaded_files/")
                         .setPositiveButton("OK", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
@@ -282,7 +347,7 @@ public class MainActivity extends AppCompatActivity {
                         .setNegativeButton("View in Server", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
-                                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://cse535gks.netai.net/uploads/"));
+                                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://cse535gks.netai.net/uploaded_files/"));
                                 startActivity(browserIntent);
                             }
                         })
@@ -308,7 +373,7 @@ public class MainActivity extends AppCompatActivity {
             InputStream inputStream = null;
             FileOutputStream fileOutputStream = null;
             try {
-                File sourceFile = new File(Environment.getExternalStorageDirectory() + "/assignment2_downloaded.db");
+                File sourceFile = new File(Environment.getExternalStorageDirectory() + "/assignment2_gks_downloaded.db");
                 if (!sourceFile.exists()) {
                     if (!sourceFile.createNewFile()) {
                         Toast.makeText(context, "File Creation Error!", Toast.LENGTH_SHORT).show();

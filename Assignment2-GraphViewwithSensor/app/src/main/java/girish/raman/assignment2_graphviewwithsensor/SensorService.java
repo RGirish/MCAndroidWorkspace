@@ -26,7 +26,7 @@ public class SensorService extends Service implements SensorEventListener {
         this.context = context;
         sensorManager = (SensorManager) context.getSystemService(SENSOR_SERVICE);
         sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_GAME);
-        db = context.openOrCreateDatabase(Environment.getExternalStorageDirectory() + "/assignment2.db", SQLiteDatabase.CREATE_IF_NECESSARY, null);
+        db = context.openOrCreateDatabase(Environment.getExternalStorageDirectory() + "/assignment2_gks.db", SQLiteDatabase.CREATE_IF_NECESSARY, null);
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
