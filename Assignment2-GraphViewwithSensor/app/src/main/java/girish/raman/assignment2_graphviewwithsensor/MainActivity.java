@@ -3,7 +3,6 @@ package girish.raman.assignment2_graphviewwithsensor;
 import android.Manifest;
 import android.app.Dialog;
 import android.app.ProgressDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -29,26 +28,28 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final int WRITE_EXTERNAL_STORAGE = 101;
     static SQLiteDatabase db;
+    final String FILENAME = "assignment2_gks.db";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
 
         if (hasPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
             setupDatabase();
@@ -88,7 +89,7 @@ public class MainActivity extends AppCompatActivity {
                 dialog.dismiss();
             }
         });
-        //dialog.show();
+        dialog.show();
     }
 
     private boolean hasPermission(String permission) {
@@ -125,6 +126,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void setupDatabase() {
         db = openOrCreateDatabase(Environment.getExternalStorageDirectory() + "/assignment2_gks.db", SQLiteDatabase.CREATE_IF_NECESSARY, null);
+        db.setVersion(1);
         db.execSQL("CREATE TABLE IF NOT EXISTS sensorValues(time TEXT, x TEXT, y TEXT, z TEXT);");
     }
 
@@ -175,13 +177,6 @@ public class MainActivity extends AppCompatActivity {
         float[] zValues = new float[10];
         int i = 0;
 
-        /*
-
-        assignment2_gks_downloaded.db does not contain the sensorValues table!!
-
-         */
-
-
         SQLiteDatabase db = openOrCreateDatabase(Environment.getExternalStorageDirectory().getPath() + File.separator + "assignment2_gks_downloaded.db", SQLiteDatabase.CREATE_IF_NECESSARY, null);
         Cursor cursor = db.rawQuery("SELECT * FROM sensorValues ORDER BY time DESC LIMIT 10;", null);
         cursor.moveToFirst();
@@ -227,202 +222,178 @@ public class MainActivity extends AppCompatActivity {
     public void onClickUpload(View view) {
         LinearLayout main = (LinearLayout) findViewById(R.id.main);
         main.removeAllViews();
-        UploadTask task = new UploadTask(this);
-        task.execute("http://cse535gks.netai.net/upload_file_to_server.php");
-        //task.execute("https://impact.asu.edu/CSE535Spring16Folder/UploadToServer.php");
+        new UploadTask().execute();
     }
 
     public void onClickDownload(View view) {
         LinearLayout main = (LinearLayout) findViewById(R.id.main);
         main.removeAllViews();
-        DownloadTask task = new DownloadTask(this);
-        task.execute("http://cse535gks.netai.net/uploaded_files/assignment2_gks.db");
+        DownloadTask task = new DownloadTask();
+        task.execute("http://cse535gks.netai.net/uploads/assignment2_gks.db");
     }
 
-    public String streamToString(InputStream in) {
-        StringBuilder sb = new StringBuilder();
-        BufferedReader br = new BufferedReader(new InputStreamReader(in));
-        String read;
-        try {
-            while ((read = br.readLine()) != null) {
-                sb.append(read);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                br.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        return sb.toString();
-    }
-
-    private class UploadTask extends AsyncTask<String, Integer, String> {
+    class UploadTask extends AsyncTask<String, Void, String> {
 
         ProgressDialog dialog;
-        private Context context;
 
-        public UploadTask(Context context) {
-            dialog = ProgressDialog.show(context, null, "Uploading. Please wait...", true);
-            this.context = context;
+        @Override
+        protected String doInBackground(String... args) {
+
+            HttpURLConnection httpURLConnection;
+            DataOutputStream dataOutputStream;
+            int bytesRead, remaining, bufferSize;
+            byte[] buffer;
+            int maxBufferSize = 1024 * 1024;
+            File file = new File(Environment.getExternalStorageDirectory().getPath() + "/" + FILENAME);
+
+            try {
+
+                FileInputStream fileInputStream = new FileInputStream(file);
+                URL url = new URL("http://cse535gks.netai.net/upload_file_to_server.php");
+
+                httpURLConnection = (HttpURLConnection) url.openConnection();
+                httpURLConnection.setDoInput(true);
+                httpURLConnection.setDoOutput(true);
+                httpURLConnection.setUseCaches(false);
+                httpURLConnection.setRequestMethod("POST");
+                httpURLConnection.setRequestProperty("Connection", "Keep-Alive");
+                httpURLConnection.setRequestProperty("ENCTYPE", "multipart/form-data");
+                httpURLConnection.setRequestProperty("Content-Type", "multipart/form-data;boundary=" + "*****");
+                httpURLConnection.setRequestProperty("theFile", Environment.getExternalStorageDirectory().getPath() + "/" + "" + FILENAME);
+
+                dataOutputStream = new DataOutputStream(httpURLConnection.getOutputStream());
+
+                dataOutputStream.writeBytes("--" + "*****" + "\r\n");
+                dataOutputStream.writeBytes("Content-Disposition: form-data; name=\"theFile\";filename=\""
+                        + Environment.getExternalStorageDirectory().getPath() + "/" + FILENAME + "\"" + "\r\n");
+
+                dataOutputStream.writeBytes("\r\n");
+
+                remaining = fileInputStream.available();
+
+                bufferSize = Math.min(remaining, maxBufferSize);
+                buffer = new byte[bufferSize];
+
+                bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+
+                while (bytesRead > 0) {
+
+                    dataOutputStream.write(buffer, 0, bufferSize);
+                    remaining = fileInputStream.available();
+                    bufferSize = Math.min(remaining, maxBufferSize);
+                    bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+
+                }
+
+                dataOutputStream.writeBytes("\r\n");
+                dataOutputStream.writeBytes("--" + "*****" + "--" + "\r\n");
+                Log.e("", String.valueOf(httpURLConnection.getResponseCode()));
+                fileInputStream.close();
+                dataOutputStream.flush();
+                dataOutputStream.close();
+                return "success";
+            } catch (MalformedURLException ex) {
+                return "MalformedURLException";
+            } catch (Exception e) {
+                return "Exception ocucrred. See the Log!";
+            }
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            dialog = ProgressDialog.show(MainActivity.this, null, "Uploading. Please wait...", true);
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            dialog.dismiss();
+            if (result.equals("success")) {
+                Toast.makeText(MainActivity.this, "Success", Toast.LENGTH_SHORT).show();
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                builder.setTitle(null)
+                        .setMessage("Database uploaded to http://cse535gks.netai.net/uploads/")
+                        .setPositiveButton("See in Server", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://cse535gks.netai.net/uploads/"));
+                                startActivity(intent);
+                                dialog.dismiss();
+                            }
+                        })
+                        .setNegativeButton("OK", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                            }
+                        })
+                        .setCancelable(false)
+                        .show();
+            } else {
+                Toast.makeText(MainActivity.this, result, Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    class DownloadTask extends AsyncTask<String, Void, String> {
+
+        ProgressDialog dialog;
+
+        public DownloadTask() {
         }
 
         @Override
         protected String doInBackground(String... args) {
+            InputStream input = null;
+            OutputStream output = null;
             HttpURLConnection connection = null;
-            DataOutputStream dos = null;
-            FileInputStream fileInputStream = null;
             try {
-                int bytesRead, bytesAvailable, bufferSize;
-                byte[] buffer;
-                int maxBufferSize = 1024 * 1024;
-                File sourceFile = new File(Environment.getExternalStorageDirectory() + "/assignment2_gks.db");
-                fileInputStream = new FileInputStream(sourceFile);
-
                 URL url = new URL(args[0]);
                 connection = (HttpURLConnection) url.openConnection();
+                connection.connect();
 
-                /*
-                    Reference for Multipart Form Data format : https://www.w3.org/Protocols/rfc1341/7_2_Multipart.html
-                 */
-
-                connection.setRequestMethod("POST");
-                connection.setRequestProperty("Connection", "Keep-Alive");
-                connection.setRequestProperty("ENCTYPE", "multipart/form-data");
-                connection.setRequestProperty("Content-Type", "multipart/form-data;boundary=*****");
-                connection.setRequestProperty("theFile", "assignment2_gks.db");
-
-                dos = new DataOutputStream(connection.getOutputStream());
-                dos.writeBytes("--*****\nContent-Disposition: form-data; name=\"theFile\";filename=\"assignment2_gks.db\"\r\n");
-
-                bytesAvailable = fileInputStream.available();
-                bufferSize = Math.min(bytesAvailable, maxBufferSize);
-                buffer = new byte[bufferSize];
-                bytesRead = fileInputStream.read(buffer, 0, bufferSize);
-                while (bytesRead > 0) {
-                    dos.write(buffer, 0, bufferSize);
-                    bytesAvailable = fileInputStream.available();
-                    bufferSize = Math.min(bytesAvailable, maxBufferSize);
-                    bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+                if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
+                    return "Some error occurred. Please try again later!";
                 }
-                dos.writeBytes("\r\n--*****--\r\n");
-                return streamToString(connection.getInputStream());
+
+                input = connection.getInputStream();
+                output = new FileOutputStream(Environment.getExternalStorageDirectory().getPath() + "/assignment2_gks_downloaded.db");
+
+                byte data[] = new byte[4096];
+                int count;
+                while ((count = input.read(data)) != -1) {
+                    output.write(data, 0, count);
+                }
+                return "success";
             } catch (Exception e) {
                 return e.toString();
             } finally {
                 try {
-                    if (fileInputStream != null) {
-                        fileInputStream.close();
-                    }
-                    if (dos != null) {
-                        dos.flush();
-                        dos.close();
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
+                    if (output != null)
+                        output.close();
+                    if (input != null)
+                        input.close();
+                } catch (IOException ignored) {
                 }
+
                 if (connection != null)
                     connection.disconnect();
             }
         }
 
         @Override
-        protected void onPostExecute(String result) {
-            dialog.dismiss();
-            if (!result.startsWith("success")) {
-                Log.e("Errrror", result);
-                Toast.makeText(context, "Upload error: " + result, Toast.LENGTH_LONG).show();
-            } else {
-                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                builder.setTitle(null)
-                        .setMessage("Database uploaded to http://cse535gks.netai.net/uploaded_files/")
-                        .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                dialog.cancel();
-                            }
-                        })
-                        .setNegativeButton("View in Server", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://cse535gks.netai.net/uploaded_files/"));
-                                startActivity(browserIntent);
-                            }
-                        })
-                        .setCancelable(false)
-                        .show();
-            }
-        }
-    }
-
-    private class DownloadTask extends AsyncTask<String, Integer, String> {
-
-        ProgressDialog dialog;
-        Context context;
-
-        public DownloadTask(Context context) {
-            this.context = context;
-            dialog = ProgressDialog.show(context, null, "Downloading. Please wait...", true);
-        }
-
-        @Override
-        protected String doInBackground(String... args) {
-            HttpURLConnection connection = null;
-            InputStream inputStream = null;
-            FileOutputStream fileOutputStream = null;
-            try {
-                File sourceFile = new File(Environment.getExternalStorageDirectory() + "/assignment2_gks_downloaded.db");
-                if (!sourceFile.exists()) {
-                    if (!sourceFile.createNewFile()) {
-                        Toast.makeText(context, "File Creation Error!", Toast.LENGTH_SHORT).show();
-                    }
-                } else {
-                    sourceFile.delete();
-                }
-
-                fileOutputStream = new FileOutputStream(sourceFile);
-                URL url = new URL(args[0]);
-                connection = (HttpURLConnection) url.openConnection();
-                if (connection.getResponseCode() == HttpURLConnection.HTTP_NOT_FOUND) {
-                    return "nofile";
-                } else if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
-                    byte[] buffer = new byte[1024];
-                    inputStream = connection.getInputStream();
-                    while (inputStream.read(buffer) > 0) {
-                        fileOutputStream.write(buffer);
-                    }
-                    return "success";
-                }
-            } catch (Exception e) {
-                return e.toString();
-            } finally {
-                try {
-                    if (fileOutputStream != null) {
-                        fileOutputStream.close();
-                    }
-                    if (inputStream != null) {
-                        inputStream.close();
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            return null;
+        protected void onPreExecute() {
+            super.onPreExecute();
+            dialog = ProgressDialog.show(MainActivity.this, null, "Downloading. Please wait...", true);
         }
 
         @Override
         protected void onPostExecute(String result) {
             dialog.dismiss();
             if (result == null) {
-                Log.e("DownloadTask - onPostExecute()", "Null result");
-                Toast.makeText(context, "Download error. Try again!", Toast.LENGTH_SHORT).show();
-            } else if (result.equals("nofile")) {
-                Log.e("DownloadTask - onPostExecute()", "No Database backup in Server!");
-                Toast.makeText(context, "No Database backup in Server!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "Error", Toast.LENGTH_SHORT).show();
             } else if (result.equals("success")) {
-                Log.e("DownloadTask - onPostExecute()", "Database backup downloaded successfully!");
+                Toast.makeText(MainActivity.this, "Success", Toast.LENGTH_SHORT).show();
                 AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
                 builder.setTitle(null)
                         .setMessage("Database downloaded to Phone Storage!")
@@ -440,6 +411,8 @@ public class MainActivity extends AppCompatActivity {
                         })
                         .setCancelable(false)
                         .show();
+            } else {
+                Toast.makeText(MainActivity.this, result, Toast.LENGTH_SHORT).show();
             }
         }
     }
