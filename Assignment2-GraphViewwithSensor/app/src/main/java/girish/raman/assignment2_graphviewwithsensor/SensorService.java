@@ -11,7 +11,6 @@ import android.hardware.SensorManager;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
-import android.util.Log;
 
 import java.math.BigDecimal;
 
@@ -31,7 +30,7 @@ public class SensorService extends Service implements SensorEventListener {
             @Override
             public void run() {
                 String s = String.valueOf(System.currentTimeMillis());
-                db.execSQL("INSERT INTO sensorValues VALUES('" + s + "','" + x + "','" + y + "','" + z + "');");
+                db.execSQL("INSERT INTO " + MainActivity.TABLENAME + " VALUES('" + s + "','" + x + "','" + y + "','" + z + "');");
                 new Handler().postDelayed(this, 1000);
             }
         }, 1000);

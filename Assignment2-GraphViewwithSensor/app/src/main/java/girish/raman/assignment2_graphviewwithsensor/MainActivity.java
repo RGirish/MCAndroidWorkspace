@@ -3,12 +3,15 @@ package girish.raman.assignment2_graphviewwithsensor;
 import android.Manifest;
 import android.app.Dialog;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -43,18 +46,15 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int WRITE_EXTERNAL_STORAGE = 101;
     static SQLiteDatabase db;
-    final String FILENAME = "assignment2_gks.db";
+    static String FILENAME = "assignment2_gks.db";
+    static String TABLENAME = "sensorValues";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-
         if (hasPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-            setupDatabase();
             showDialogBox();
-            startSensorService();
         } else {
             askForPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE);
         }
@@ -86,6 +86,9 @@ public class MainActivity extends AppCompatActivity {
                 ((TextView) findViewById(R.id.patientNameTV)).setText("Patient's Name : " + patientName);
                 ((TextView) findViewById(R.id.patientAgeTV)).setText("Patient's Age: " + patientAge);
                 ((TextView) findViewById(R.id.patientSexTV)).setText("Patient's Sex: " + patientSex);
+                TABLENAME = patientName + "_" + patientID + "_" + patientAge + "_" + patientSex;
+                setupDatabase();
+                startSensorService();
                 dialog.dismiss();
             }
         });
@@ -109,9 +112,7 @@ public class MainActivity extends AppCompatActivity {
         switch (requestCode) {
             case WRITE_EXTERNAL_STORAGE: {
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    setupDatabase();
                     showDialogBox();
-                    startSensorService();
                 } else {
                     hideButtons();
                     Toast.makeText(MainActivity.this, "External Storage Access Permission Needed!", Toast.LENGTH_SHORT).show();
@@ -125,9 +126,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupDatabase() {
-        db = openOrCreateDatabase(Environment.getExternalStorageDirectory() + "/assignment2_gks.db", SQLiteDatabase.CREATE_IF_NECESSARY, null);
+        db = openOrCreateDatabase(Environment.getExternalStorageDirectory() + "/" + FILENAME, SQLiteDatabase.CREATE_IF_NECESSARY, null);
         db.setVersion(1);
-        db.execSQL("CREATE TABLE IF NOT EXISTS sensorValues(time TEXT, x TEXT, y TEXT, z TEXT);");
+        db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLENAME + "(time TEXT, x TEXT, y TEXT, z TEXT);");
     }
 
     public void onClickRun(View view) {
@@ -135,7 +136,7 @@ public class MainActivity extends AppCompatActivity {
         float[] yValues = new float[10];
         float[] zValues = new float[10];
         int i = 0;
-        Cursor cursor = db.rawQuery("SELECT * FROM sensorValues ORDER BY time DESC LIMIT 10;", null);
+        Cursor cursor = db.rawQuery("SELECT * FROM " + TABLENAME + " ORDER BY time DESC LIMIT 10;", null);
         cursor.moveToFirst();
         while (true) {
             xValues[i] = Float.valueOf(cursor.getString(1));
@@ -177,8 +178,8 @@ public class MainActivity extends AppCompatActivity {
         float[] zValues = new float[10];
         int i = 0;
 
-        SQLiteDatabase db = openOrCreateDatabase(Environment.getExternalStorageDirectory().getPath() + File.separator + "assignment2_gks_downloaded.db", SQLiteDatabase.CREATE_IF_NECESSARY, null);
-        Cursor cursor = db.rawQuery("SELECT * FROM sensorValues ORDER BY time DESC LIMIT 10;", null);
+        SQLiteDatabase db = openOrCreateDatabase(Environment.getExternalStorageDirectory().getPath() + File.separator + FILENAME + "_downloaded.db", SQLiteDatabase.CREATE_IF_NECESSARY, null);
+        Cursor cursor = db.rawQuery("SELECT * FROM " + TABLENAME + " ORDER BY time DESC LIMIT 10;", null);
         cursor.moveToFirst();
         while (true) {
             xValues[i] = Float.valueOf(cursor.getString(1));
@@ -219,17 +220,31 @@ public class MainActivity extends AppCompatActivity {
         main.removeAllViews();
     }
 
+    private boolean connectedToInternet() {
+        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+    }
+
     public void onClickUpload(View view) {
         LinearLayout main = (LinearLayout) findViewById(R.id.main);
         main.removeAllViews();
-        new UploadTask().execute();
+        if (connectedToInternet()) {
+            new UploadTask().execute();
+        } else {
+            Toast.makeText(MainActivity.this, "Check your Internet Connection!", Toast.LENGTH_SHORT).show();
+        }
     }
 
     public void onClickDownload(View view) {
         LinearLayout main = (LinearLayout) findViewById(R.id.main);
         main.removeAllViews();
-        DownloadTask task = new DownloadTask();
-        task.execute("http://cse535gks.netai.net/uploads/assignment2_gks.db");
+        if (connectedToInternet()) {
+            DownloadTask task = new DownloadTask();
+            task.execute("http://cse535gks.netai.net/uploads/" + FILENAME);
+        } else {
+            Toast.makeText(MainActivity.this, "Check your Internet Connection!", Toast.LENGTH_SHORT).show();
+        }
     }
 
     class UploadTask extends AsyncTask<String, Void, String> {
@@ -295,7 +310,7 @@ public class MainActivity extends AppCompatActivity {
             } catch (MalformedURLException ex) {
                 return "MalformedURLException";
             } catch (Exception e) {
-                return "Exception ocucrred. See the Log!";
+                return "Exception occurred! " + e.toString();
             }
         }
 
@@ -357,7 +372,7 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 input = connection.getInputStream();
-                output = new FileOutputStream(Environment.getExternalStorageDirectory().getPath() + "/assignment2_gks_downloaded.db");
+                output = new FileOutputStream(Environment.getExternalStorageDirectory().getPath() + "/" + FILENAME + "_downloaded.db");
 
                 byte data[] = new byte[4096];
                 int count;
