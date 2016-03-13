@@ -84,7 +84,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                 Log.e("TTS", "This Language is not supported");
             }
         } else {
-            Log.e("TTS", "Initilization Failed!");
+            Log.e("TTS", "Initialization Failed!");
         }
     }
 
