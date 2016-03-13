@@ -1,9 +1,15 @@
 package cse535.s16.g32.whereishe;
 
+import android.Manifest;
+import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
+import android.location.Location;
+import android.location.LocationManager;
 import android.os.Bundle;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -48,6 +54,33 @@ public class MainActivity extends AppCompatActivity {
                     String country = addr.getCountryName();
                     String fullAddress = address + " " + city + " " + state + " " + country;
                     preferences.edit().putString("karthiksAddress", fullAddress).apply();
+
+                    LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+                    if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                        return;
+                    }
+                    List<String> providers = lm.getProviders(true);
+                    for (String provider : providers) {
+                        Location location = lm.getLastKnownLocation(provider);
+                        if (location == null) {
+                            continue;
+                        }
+                        double mylatitude = location.getLatitude();
+                        double mylongitude = location.getLongitude();
+
+                        Location myLocation = new Location("");
+                        myLocation.setLatitude(mylatitude);
+                        myLocation.setLongitude(mylongitude);
+
+                        Location hisLocation = new Location("");
+                        hisLocation.setLatitude(latitude);
+                        hisLocation.setLongitude(longitude);
+
+                        float distance = myLocation.distanceTo(hisLocation);
+                        if (distance < 300) {
+                            Log.e("Karthik is near", "Karthik is near");
+                        }
+                    }
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -88,6 +121,34 @@ public class MainActivity extends AppCompatActivity {
                     String country = addr.getCountryName();
                     String fullAddress = address + " " + city + " " + state + " " + country;
                     preferences.edit().putString("girishsAddress", fullAddress).apply();
+
+                    LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+                    if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                        return;
+                    }
+                    List<String> providers = lm.getProviders(true);
+                    for (String provider : providers) {
+                        Location location = lm.getLastKnownLocation(provider);
+                        if (location == null) {
+                            continue;
+                        }
+                        double mylatitude = location.getLatitude();
+                        double mylongitude = location.getLongitude();
+
+                        Location myLocation = new Location("");
+                        myLocation.setLatitude(mylatitude);
+                        myLocation.setLongitude(mylongitude);
+
+                        Location hisLocation = new Location("");
+                        hisLocation.setLatitude(latitude);
+                        hisLocation.setLongitude(longitude);
+
+                        float distance = myLocation.distanceTo(hisLocation);
+                        if (distance < 300) {
+                            Log.e("Girish is near", "Girish is near");
+                        }
+                    }
+
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
