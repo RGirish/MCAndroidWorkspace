@@ -8,21 +8,16 @@ import android.os.Handler;
 import android.util.Log;
 
 public class SettingsContentObserver extends ContentObserver {
+
     int previousVolume;
     Context context;
     String pattern = "UDDU", now = "****";
 
-    public SettingsContentObserver(Context c, Handler handler) {
+    public SettingsContentObserver(Context context, Handler handler) {
         super(handler);
-        context = c;
-
-        AudioManager audio = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+        this.context = context;
+        AudioManager audio = (AudioManager) this.context.getSystemService(Context.AUDIO_SERVICE);
         previousVolume = audio.getStreamVolume(AudioManager.STREAM_MUSIC);
-    }
-
-    @Override
-    public boolean deliverSelfNotifications() {
-        return super.deliverSelfNotifications();
     }
 
     @Override
@@ -35,7 +30,7 @@ public class SettingsContentObserver extends ContentObserver {
         int delta = previousVolume - currentVolume;
 
         if (delta > 0) {
-            Log.i("Decreased", "Decreased");
+            Log.e("Decreased", "Decreased");
             now = now.substring(1) + "D";
             if (now.equals(pattern)) {
                 Intent intent = new Intent();
@@ -45,7 +40,7 @@ public class SettingsContentObserver extends ContentObserver {
             }
             previousVolume = currentVolume;
         } else if (delta < 0) {
-            Log.i("Increased", "Increased");
+            Log.e("Increased", "Increased");
             now = now.substring(1) + "U";
             if (now.equals(pattern)) {
                 Intent intent = new Intent();
