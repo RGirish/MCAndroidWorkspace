@@ -16,6 +16,12 @@ import java.net.URL;
 
 public class GetWeatherUpdateTask extends AsyncTask<String, Void, String> {
 
+    TaskListener taskListener;
+
+    public GetWeatherUpdateTask(TaskListener taskListener) {
+        this.taskListener = taskListener;
+    }
+
     @Override
     protected String doInBackground(String... params) {
         try {
@@ -37,6 +43,7 @@ public class GetWeatherUpdateTask extends AsyncTask<String, Void, String> {
             JSONObject root = new JSONObject(json);
             JSONArray weather = root.getJSONArray("weather");
             String weatherType = ((JSONObject) weather.get(0)).getString("main");
+            taskListener.onComplete(weatherType);
             Log.e("Weather is ", weatherType);
         } catch (JSONException e) {
             Log.e("JSONException", e.toString());

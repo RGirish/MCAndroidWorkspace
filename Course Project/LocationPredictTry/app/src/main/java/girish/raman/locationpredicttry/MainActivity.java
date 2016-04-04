@@ -1,33 +1,30 @@
 package girish.raman.locationpredicttry;
 
 import android.Manifest;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.app.ProgressDialog;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.location.Address;
-import android.location.Geocoder;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
-import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
@@ -54,32 +51,10 @@ public class MainActivity extends AppCompatActivity {
             startService(intent);
         }
 
-        LocalBroadcastManager.getInstance(this).registerReceiver(
-                new BroadcastReceiver() {
-                    @Override
-                    public void onReceive(Context context, Intent intent) {
-                        if (dialog.isShowing()) {
-                            dialog.dismiss();
-                        }
-                        ((TextView) findViewById(R.id.logData)).setText(intent.getStringExtra("locationAnalysisData"));
-                    }
-                }, new IntentFilter(LocationAnalyzeService.LOCATION_ANALYSIS_RESULT_BROADCAST)
-        );
-        try {
-            /*db.execSQL("ALTER TABLE locationLog ADD accuracy TEXT;");
-            db.execSQL("ALTER TABLE locationLog ADD day TEXT;");
-            db.execSQL("ALTER TABLE locationLog ADD month TEXT;");
-            db.execSQL("UPDATE locationLog set month = '1';");
-            db.execSQL("UPDATE locationLog set day = '14' WHERE dayOfWeek = '1';");
-            db.execSQL("UPDATE locationLog set day = '15' WHERE dayOfWeek = '2';");
-            db.execSQL("UPDATE locationLog set day = '16' WHERE dayOfWeek = '3';");
-            db.execSQL("UPDATE locationLog set day = '17' WHERE dayOfWeek = '4';");
-            db.execSQL("UPDATE locationLog set day = '18' WHERE dayOfWeek = '5';");
-            db.execSQL("UPDATE locationLog set day = '19' WHERE dayOfWeek = '6';");
-            db.execSQL("UPDATE locationLog set day = '20' WHERE dayOfWeek = '7';");*/
-        } catch (Exception e) {
-            Log.e("Ex", e.getMessage());
-        }
+        Intent intent = new Intent(this, LocationAnalyzeService.class);
+        PendingIntent pendingIntent = PendingIntent.getService(this, 0, intent, 0);
+        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, Calendar.getInstance().getTimeInMillis(), 4838400000L, pendingIntent);
     }
 
     @Override
@@ -128,7 +103,7 @@ public class MainActivity extends AppCompatActivity {
 
                 Cursor cursor = db.rawQuery("SELECT * FROM locationLog;", null);
                 cursor.moveToFirst();
-                final Map<String, Integer> uniqueLocations = new HashMap<>();
+                final HashMap<String, Integer> uniqueLocations = new HashMap<>();
 
                 while (!cursor.isAfterLast()) {
                     String fullAddress = cursor.getString(6);
@@ -146,7 +121,7 @@ public class MainActivity extends AppCompatActivity {
                     public void run() {
                         TextView textView = (TextView) MainActivity.this.findViewById(R.id.logData);
                         textView.setText("");
-                        for (Object o : uniqueLocations.entrySet()) {
+                        for (Object o : sortHashMapByValues(uniqueLocations).entrySet()) {
                             Map.Entry entry = (Map.Entry) o;
                             textView.append(String.valueOf(entry.getKey()) + " - " + String.valueOf(entry.getValue()) + "\n\n");
                         }
@@ -158,20 +133,31 @@ public class MainActivity extends AppCompatActivity {
         }).start();
     }
 
-    public void setAddresses(View view) {
+    public LinkedHashMap sortHashMapByValues(HashMap passedMap) {
+        List mapKeys = new ArrayList(passedMap.keySet());
+        List mapValues = new ArrayList(passedMap.values());
+        Collections.sort(mapValues);
+        Collections.sort(mapKeys);
 
+        LinkedHashMap<String, Integer> sortedMap = new LinkedHashMap<>();
+        for (Object val : mapValues) {
+            for (Object key : mapKeys) {
+                String comp1 = passedMap.get(key).toString();
+                String comp2 = val.toString();
+                if (comp1.equals(comp2)) {
+                    passedMap.remove(key);
+                    mapKeys.remove(key);
+                    sortedMap.put((String) key, (Integer) val);
+                    break;
+                }
+            }
+        }
+        return sortedMap;
     }
 
     public void analyze(View view) {
         dialog = ProgressDialog.show(MainActivity.this, null, "Please wait...", true);
         Intent intent = new Intent(this, LocationAnalyzeService.class);
-        intent.putExtra("dayOfWeek", Integer.parseInt(((TextView)findViewById(R.id.dayOfWeek)).getText().toString()));
-        intent.putExtra("day", Integer.parseInt(((TextView)findViewById(R.id.day)).getText().toString()));
         startService(intent);
-    }
-
-    public void changeTo710(View view) {
-        db.execSQL("UPDATE locationLog set address = '710 Hardy Dr Tempe Arizona United States' WHERE address = '409 S Westfall Ave Tempe Arizona United States';");
-        db.execSQL("UPDATE locationLog set address = '710 Hardy Dr Tempe Arizona United States' WHERE address = 'W Apartment Tempe Arizona United States';");
     }
 }

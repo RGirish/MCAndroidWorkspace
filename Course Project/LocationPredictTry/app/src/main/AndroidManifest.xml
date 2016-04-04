@@ -41,6 +41,10 @@
             </intent-filter>
         </receiver>
 
+        <service
+            android:name=".WeatherNotificationService"
+            android:enabled="true"
+            android:exported="true"></service>
     </application>
 
 </manifest>
