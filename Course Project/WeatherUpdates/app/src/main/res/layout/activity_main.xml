@@ -9,9 +9,4 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="cse535.s16.g32.weatherupdates.MainActivity">
 
-    <Button
-        android:onClick="function"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Hello World!" />
 </RelativeLayout>
