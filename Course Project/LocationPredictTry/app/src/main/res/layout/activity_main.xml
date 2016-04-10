@@ -1,62 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/main"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
-
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:onClick="onClickSeeLoggedData"
-            android:text="See Logged Data" />
-
-        <!--<Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:onClick="setAddresses"
-            android:text="Set Addresses" />-->
-
-        <!--<Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:onClick="changeTo710"
-            android:text="Change to 710" />-->
-
-        <EditText
-            android:id="@+id/dayOfWeek"
-            android:layout_width="200dp"
-            android:layout_height="wrap_content"
-            android:hint="Day Of Week"
-            android:inputType="number" />
-
-        <EditText
-            android:id="@+id/day"
-            android:layout_width="200dp"
-            android:layout_height="wrap_content"
-            android:hint="Day"
-            android:inputType="number" />
-
-        <EditText
-            android:id="@+id/month"
-            android:layout_width="200dp"
-            android:layout_height="wrap_content"
-            android:hint="Month"
-            android:inputType="number" />
-
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:onClick="analyze"
-            android:text="Analyze" />
-
-        <TextView
-            android:id="@+id/logData"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
-
-    </LinearLayout>
-</ScrollView>
+    android:layout_height="match_parent"
+    android:orientation="vertical" />

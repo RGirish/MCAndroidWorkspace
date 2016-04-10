@@ -20,8 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 
-public class MainActivity extends AppCompatActivity implements
-        RecognitionListener {
+public class MainActivity extends AppCompatActivity implements RecognitionListener {
 
     final int MY_PERMISSIONS_REQUEST_RECORD_AUDIO = 101;
     private SpeechRecognizer speech = null;
