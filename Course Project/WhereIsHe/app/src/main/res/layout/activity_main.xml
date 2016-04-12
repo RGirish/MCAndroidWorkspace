@@ -6,13 +6,13 @@
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:onClick="onClickWhereIskarthik"
-        android:text="Where is Karthik?" />
+        android:onClick="onClickWhereIsMother"
+        android:text="Where is Mother?" />
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:onClick="onClickWhereIsgirish"
-        android:text="Where is Girish?" />
+        android:onClick="onClickWhereIsFather"
+        android:text="Where is Father?" />
 
 </LinearLayout>

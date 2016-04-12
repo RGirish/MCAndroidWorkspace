@@ -7,8 +7,15 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.sqlite.SQLiteDatabase;
+import android.location.Address;
+import android.location.Geocoder;
+import android.location.Location;
+import android.location.LocationManager;
+import android.nfc.NdefMessage;
+import android.nfc.NfcAdapter;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Parcelable;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
@@ -21,8 +28,12 @@ import android.view.View;
 import android.widget.Toast;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity implements View.OnTouchListener, RecognitionListener {
 
@@ -94,6 +105,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         } else {
             init();
         }
+
+        startService(new Intent(this, WhereIsHeListenerService.class));
 
         Intent intent = new Intent(this, LocationAnalyzeService.class);
         PendingIntent pendingIntent = PendingIntent.getService(this, 0, intent, 0);
@@ -369,20 +382,25 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         Log.i(LOG_TAG, "onResults");
         ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
         if (matches != null) {
-            if (matches.contains("where am I")) {
-                Toast.makeText(MainActivity.this, "Where am I?", Toast.LENGTH_SHORT).show();
-            }
-
             if (matches.contains("where is father")) {
+                Intent i = new Intent(this, TTSService.class);
+                i.putExtra("textToSpeak", getSharedPreferences("WhereIsHe", MODE_PRIVATE).getString("fathersAddress", "Location Unknown"));
+                startService(i);
                 Toast.makeText(MainActivity.this, "Where is father?", Toast.LENGTH_SHORT).show();
             }
 
             if (matches.contains("where is mother")) {
+                Intent i = new Intent(this, TTSService.class);
+                i.putExtra("textToSpeak", getSharedPreferences("WhereIsHe", MODE_PRIVATE).getString("mothersAddress", "Location Unknown"));
+                startService(i);
                 Toast.makeText(MainActivity.this, "Where is mother?", Toast.LENGTH_SHORT).show();
             }
 
-            if (matches.contains("who is near me")) {
-                Toast.makeText(MainActivity.this, "Who is near me?", Toast.LENGTH_SHORT).show();
+            if (matches.contains("where am i")) {
+                Intent i = new Intent(this, TTSService.class);
+                i.putExtra("textToSpeak", whereAmI());
+                startService(i);
+                Toast.makeText(MainActivity.this, "Where am i?", Toast.LENGTH_SHORT).show();
             }
         } else {
             Toast.makeText(MainActivity.this, "No matches found!", Toast.LENGTH_SHORT).show();
@@ -393,4 +411,66 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     public void onRmsChanged(float rmsdB) {
         Log.i(LOG_TAG, "onRmsChanged: " + rmsdB);
     }
+
+    public String whereAmI() {
+        Geocoder geocoder;
+        List<Address> addresses = null;
+        geocoder = new Geocoder(this, Locale.getDefault());
+
+        try {
+            LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                return null;
+            }
+            List<String> providers = lm.getProviders(true);
+            for (String provider : providers) {
+                Location location = lm.getLastKnownLocation(provider);
+                if (location == null) {
+                    Log.e("null", provider);
+                    continue;
+                }
+                double longitude = location.getLongitude();
+                double latitude = location.getLatitude();
+
+                addresses = geocoder.getFromLocation(latitude, longitude, 1);
+                Address addr = addresses.get(0);
+                String address = addr.getAddressLine(0);
+                String city = addr.getLocality();
+                String state = addr.getAdminArea();
+                String country = addr.getCountryName();
+                return address + " " + city + " " + state + " " + country;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return "Location Unknown";
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Intent intent = getIntent();
+        if (NfcAdapter.ACTION_NDEF_DISCOVERED.equals(intent.getAction())) {
+            processIntent(intent);
+        }
+    }
+
+    void processIntent(Intent intent) {
+        Parcelable[] rawMsgs = intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES);
+        NdefMessage msg = (NdefMessage) rawMsgs[0];
+
+        byte[] payload = msg.getRecords()[0].getPayload();
+        String textEncoding = ((payload[0] & 128) == 0) ? "UTF-8" : "UTF-16";
+        int languageCodeLength = payload[0] & 0063;
+        try {
+            String stringToSpeak = new String(payload, languageCodeLength + 1, payload.length - languageCodeLength - 1, textEncoding);
+            Intent intent2 = new Intent(this, TTSService.class);
+            intent2.putExtra("textToSpeak", stringToSpeak);
+            startService(intent2);
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+    }
+
 }

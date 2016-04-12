@@ -17,7 +17,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
     }
 
-    public void onResume() {
+    @Override
+    protected void onResume() {
         super.onResume();
         Intent intent = getIntent();
         if (NfcAdapter.ACTION_NDEF_DISCOVERED.equals(intent.getAction())) {

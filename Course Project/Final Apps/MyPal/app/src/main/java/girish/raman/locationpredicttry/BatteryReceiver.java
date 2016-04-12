@@ -12,7 +12,9 @@ public class BatteryReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         if (intent.getAction().equals(Intent.ACTION_BATTERY_LOW)) {
-            //TTS
+            Intent i = new Intent(context, TTSService.class);
+            i.putExtra("textToSpeak", "Battery low. Battery low. Battery low.");
+            context.startService(i);
             Log.e("BATTERY_LOW", "BATTERY_LOW");
         } else if (intent.getAction().equals(Intent.ACTION_BATTERY_OKAY)) {
 

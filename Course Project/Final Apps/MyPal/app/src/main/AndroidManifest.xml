@@ -17,8 +17,17 @@
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.WRITE_CONTACTS" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.NFC" />
 
     <uses-permission-sdk-23 android:name="android.permission.RECORD_AUDIO" />
+
+    <uses-feature
+        android:name="android.hardware.nfc"
+        android:required="true" />
 
     <application
         android:allowBackup="true"
@@ -31,6 +40,11 @@
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.nfc.action.NDEF_DISCOVERED" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
             </intent-filter>
         </activity>
 
@@ -57,28 +71,28 @@
             android:enabled="true"
             android:exported="true" />
 
-<!--        <receiver
-            android:name=".SMSReceiver"
-            android:enabled="true"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.provider.Telephony.SMS_RECEIVED" />
-            </intent-filter>
-        </receiver>-->
+        <!--        <receiver
+                    android:name=".SMSReceiver"
+                    android:enabled="true"
+                    android:exported="true">
+                    <intent-filter>
+                        <action android:name="android.provider.Telephony.SMS_RECEIVED" />
+                    </intent-filter>
+                </receiver>-->
 
         <service
             android:name=".TTSService"
             android:enabled="true"
             android:exported="true" />
 
-<!--        <receiver
-            android:name=".CallReceiver"
-            android:enabled="true"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.PHONE_STATE" />
-            </intent-filter>
-        </receiver>-->
+        <!--        <receiver
+                    android:name=".CallReceiver"
+                    android:enabled="true"
+                    android:exported="true">
+                    <intent-filter>
+                        <action android:name="android.intent.action.PHONE_STATE" />
+                    </intent-filter>
+                </receiver>-->
 
         <service android:name=".ButtonPatternListenerService" />
 
@@ -91,6 +105,12 @@
                 <action android:name="android.intent.action.ACTION_BATTERY_OKAY" />
             </intent-filter>
         </receiver>
+
+        <service
+            android:name=".WhereIsHeListenerService"
+            android:enabled="true"
+            android:exported="true" />
+
     </application>
 
 </manifest>

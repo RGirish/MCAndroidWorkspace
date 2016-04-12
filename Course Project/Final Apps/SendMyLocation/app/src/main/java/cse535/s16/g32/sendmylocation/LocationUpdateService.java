@@ -27,7 +27,7 @@ public class LocationUpdateService extends Service implements LocationListener {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 300000, 0, this);
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 30000, 0, this);
         ref = new Firebase("https://cse535s16g32.firebaseio.com/");
     }
 
@@ -47,7 +47,7 @@ public class LocationUpdateService extends Service implements LocationListener {
             String latitude, longitude;
             latitude = String.valueOf(location.getLatitude());
             longitude = String.valueOf(location.getLongitude());
-            ref.child("receivedLocations").child("girish").push().setValue(latitude + "_" + longitude);
+            ref.child("receivedLocations").child("father").push().setValue(latitude + "_" + longitude);
         }
     }
 
