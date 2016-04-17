@@ -141,15 +141,15 @@ public class LocationAnalyzeService extends Service {
     }
 
     private void setAlarmsForWeatherUpdates() {
+        sundayOutTimes = sortHashMapByValues(sundayOutTimes);
         mondayOutTimes = sortHashMapByValues(mondayOutTimes);
         tuesdayOutTimes = sortHashMapByValues(tuesdayOutTimes);
         wednesdayOutTimes = sortHashMapByValues(wednesdayOutTimes);
         thursdayOutTimes = sortHashMapByValues(thursdayOutTimes);
         fridayOutTimes = sortHashMapByValues(fridayOutTimes);
         saturdayOutTimes = sortHashMapByValues(saturdayOutTimes);
-        sundayOutTimes = sortHashMapByValues(sundayOutTimes);
 
-        Iterator iterator = mondayOutTimes.entrySet().iterator();
+        Iterator iterator = sundayOutTimes.entrySet().iterator();
         Map.Entry pair = (Map.Entry) iterator.next();
         int hour = Integer.parseInt(pair.getKey().toString()) - 1;
         int minute = 30;
