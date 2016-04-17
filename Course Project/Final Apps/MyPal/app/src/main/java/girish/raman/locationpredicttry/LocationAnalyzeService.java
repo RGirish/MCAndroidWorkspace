@@ -149,24 +149,279 @@ public class LocationAnalyzeService extends Service {
         fridayOutTimes = sortHashMapByValues(fridayOutTimes);
         saturdayOutTimes = sortHashMapByValues(saturdayOutTimes);
 
+
+        //For Sunday
         Iterator iterator = sundayOutTimes.entrySet().iterator();
         Map.Entry pair = (Map.Entry) iterator.next();
         int hour = Integer.parseInt(pair.getKey().toString()) - 1;
         int minute = 30;
         Calendar now = Calendar.getInstance();
+        long difference;
         if (now.get(Calendar.DAY_OF_WEEK) == 1) {
             if (now.get(Calendar.HOUR_OF_DAY) < hour) {
                 //diff bet now and today's 'hour'
+                Calendar c = Calendar.getInstance();
+                c.set(Calendar.HOUR_OF_DAY, hour);
+                c.set(Calendar.MINUTE, minute);
+                c.set(Calendar.SECOND, 0);
+                difference = now.getTimeInMillis() - c.getTimeInMillis();
             } else {
                 //diff bet now and the next sunday's 'hour'
+                Calendar c = Calendar.getInstance();
+                c.set(Calendar.HOUR_OF_DAY, hour);
+                c.set(Calendar.MINUTE, minute);
+                c.set(Calendar.SECOND, 0);
+                difference = c.getTimeInMillis() - now.getTimeInMillis();
+                difference = (AlarmManager.INTERVAL_DAY * 7) - difference;
             }
         } else {
             //diff bet now and the next sunday's 'hour'
+            Calendar c = Calendar.getInstance();
+            c.set(Calendar.DAY_OF_WEEK, Calendar.SUNDAY);
+            c.set(Calendar.HOUR_OF_DAY, hour);
+            c.set(Calendar.MINUTE, minute);
+            c.set(Calendar.SECOND, 0);
+            c.add(Calendar.DATE, now.get(Calendar.DAY_OF_WEEK) - 1);
+            difference = c.getTimeInMillis() - now.getTimeInMillis();
         }
         AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
         Intent intent = new Intent(this, WeatherNotificationService.class);
         PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, intent, 0);
-        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), AlarmManager.INTERVAL_DAY * 7, pendingIntent);
+        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, difference, AlarmManager.INTERVAL_DAY * 7, pendingIntent);
+
+
+        //For Monday
+        iterator = mondayOutTimes.entrySet().iterator();
+        pair = (Map.Entry) iterator.next();
+        hour = Integer.parseInt(pair.getKey().toString()) - 1;
+        minute = 30;
+        now = Calendar.getInstance();
+        if (now.get(Calendar.DAY_OF_WEEK) == 2) {
+            if (now.get(Calendar.HOUR_OF_DAY) < hour) {
+                //diff bet now and today's 'hour'
+                Calendar c = Calendar.getInstance();
+                c.set(Calendar.HOUR_OF_DAY, hour);
+                c.set(Calendar.MINUTE, minute);
+                c.set(Calendar.SECOND, 0);
+                difference = now.getTimeInMillis() - c.getTimeInMillis();
+            } else {
+                //diff bet now and the next monday's 'hour'
+                Calendar c = Calendar.getInstance();
+                c.set(Calendar.HOUR_OF_DAY, hour);
+                c.set(Calendar.MINUTE, minute);
+                c.set(Calendar.SECOND, 0);
+                difference = c.getTimeInMillis() - now.getTimeInMillis();
+                difference = (AlarmManager.INTERVAL_DAY * 7) - difference;
+            }
+        } else {
+            //diff bet now and the next monday's 'hour'
+            Calendar c = Calendar.getInstance();
+            c.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
+            c.set(Calendar.HOUR_OF_DAY, hour);
+            c.set(Calendar.MINUTE, minute);
+            c.set(Calendar.SECOND, 0);
+            c.add(Calendar.DATE, now.get(Calendar.DAY_OF_WEEK) - 1);
+            difference = c.getTimeInMillis() - now.getTimeInMillis();
+        }
+        alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        intent = new Intent(this, WeatherNotificationService.class);
+        pendingIntent = PendingIntent.getBroadcast(this, 0, intent, 0);
+        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, difference, AlarmManager.INTERVAL_DAY * 7, pendingIntent);
+
+
+        //For Tuesday
+        iterator = tuesdayOutTimes.entrySet().iterator();
+        pair = (Map.Entry) iterator.next();
+        hour = Integer.parseInt(pair.getKey().toString()) - 1;
+        minute = 30;
+        now = Calendar.getInstance();
+        if (now.get(Calendar.DAY_OF_WEEK) == 3) {
+            if (now.get(Calendar.HOUR_OF_DAY) < hour) {
+                //diff bet now and today's 'hour'
+                Calendar c = Calendar.getInstance();
+                c.set(Calendar.HOUR_OF_DAY, hour);
+                c.set(Calendar.MINUTE, minute);
+                c.set(Calendar.SECOND, 0);
+                difference = now.getTimeInMillis() - c.getTimeInMillis();
+            } else {
+                //diff bet now and the next monday's 'hour'
+                Calendar c = Calendar.getInstance();
+                c.set(Calendar.HOUR_OF_DAY, hour);
+                c.set(Calendar.MINUTE, minute);
+                c.set(Calendar.SECOND, 0);
+                difference = c.getTimeInMillis() - now.getTimeInMillis();
+                difference = (AlarmManager.INTERVAL_DAY * 7) - difference;
+            }
+        } else {
+            //diff bet now and the next monday's 'hour'
+            Calendar c = Calendar.getInstance();
+            c.set(Calendar.DAY_OF_WEEK, Calendar.TUESDAY);
+            c.set(Calendar.HOUR_OF_DAY, hour);
+            c.set(Calendar.MINUTE, minute);
+            c.set(Calendar.SECOND, 0);
+            c.add(Calendar.DATE, now.get(Calendar.DAY_OF_WEEK) - 1);
+            difference = c.getTimeInMillis() - now.getTimeInMillis();
+        }
+        alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        intent = new Intent(this, WeatherNotificationService.class);
+        pendingIntent = PendingIntent.getBroadcast(this, 0, intent, 0);
+        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, difference, AlarmManager.INTERVAL_DAY * 7, pendingIntent);
+
+
+        //For Wednesday
+        iterator = wednesdayOutTimes.entrySet().iterator();
+        pair = (Map.Entry) iterator.next();
+        hour = Integer.parseInt(pair.getKey().toString()) - 1;
+        minute = 30;
+        now = Calendar.getInstance();
+        if (now.get(Calendar.DAY_OF_WEEK) == 4) {
+            if (now.get(Calendar.HOUR_OF_DAY) < hour) {
+                //diff bet now and today's 'hour'
+                Calendar c = Calendar.getInstance();
+                c.set(Calendar.HOUR_OF_DAY, hour);
+                c.set(Calendar.MINUTE, minute);
+                c.set(Calendar.SECOND, 0);
+                difference = now.getTimeInMillis() - c.getTimeInMillis();
+            } else {
+                //diff bet now and the next monday's 'hour'
+                Calendar c = Calendar.getInstance();
+                c.set(Calendar.HOUR_OF_DAY, hour);
+                c.set(Calendar.MINUTE, minute);
+                c.set(Calendar.SECOND, 0);
+                difference = c.getTimeInMillis() - now.getTimeInMillis();
+                difference = (AlarmManager.INTERVAL_DAY * 7) - difference;
+            }
+        } else {
+            //diff bet now and the next monday's 'hour'
+            Calendar c = Calendar.getInstance();
+            c.set(Calendar.DAY_OF_WEEK, Calendar.WEDNESDAY);
+            c.set(Calendar.HOUR_OF_DAY, hour);
+            c.set(Calendar.MINUTE, minute);
+            c.set(Calendar.SECOND, 0);
+            c.add(Calendar.DATE, now.get(Calendar.DAY_OF_WEEK) - 1);
+            difference = c.getTimeInMillis() - now.getTimeInMillis();
+        }
+        alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        intent = new Intent(this, WeatherNotificationService.class);
+        pendingIntent = PendingIntent.getBroadcast(this, 0, intent, 0);
+        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, difference, AlarmManager.INTERVAL_DAY * 7, pendingIntent);
+
+
+        //For Thursday
+        iterator = thursdayOutTimes.entrySet().iterator();
+        pair = (Map.Entry) iterator.next();
+        hour = Integer.parseInt(pair.getKey().toString()) - 1;
+        minute = 30;
+        now = Calendar.getInstance();
+        if (now.get(Calendar.DAY_OF_WEEK) == 5) {
+            if (now.get(Calendar.HOUR_OF_DAY) < hour) {
+                //diff bet now and today's 'hour'
+                Calendar c = Calendar.getInstance();
+                c.set(Calendar.HOUR_OF_DAY, hour);
+                c.set(Calendar.MINUTE, minute);
+                c.set(Calendar.SECOND, 0);
+                difference = now.getTimeInMillis() - c.getTimeInMillis();
+            } else {
+                //diff bet now and the next monday's 'hour'
+                Calendar c = Calendar.getInstance();
+                c.set(Calendar.HOUR_OF_DAY, hour);
+                c.set(Calendar.MINUTE, minute);
+                c.set(Calendar.SECOND, 0);
+                difference = c.getTimeInMillis() - now.getTimeInMillis();
+                difference = (AlarmManager.INTERVAL_DAY * 7) - difference;
+            }
+        } else {
+            //diff bet now and the next monday's 'hour'
+            Calendar c = Calendar.getInstance();
+            c.set(Calendar.DAY_OF_WEEK, Calendar.THURSDAY);
+            c.set(Calendar.HOUR_OF_DAY, hour);
+            c.set(Calendar.MINUTE, minute);
+            c.set(Calendar.SECOND, 0);
+            c.add(Calendar.DATE, now.get(Calendar.DAY_OF_WEEK) - 1);
+            difference = c.getTimeInMillis() - now.getTimeInMillis();
+        }
+        alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        intent = new Intent(this, WeatherNotificationService.class);
+        pendingIntent = PendingIntent.getBroadcast(this, 0, intent, 0);
+        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, difference, AlarmManager.INTERVAL_DAY * 7, pendingIntent);
+
+
+        //For Friday
+        iterator = fridayOutTimes.entrySet().iterator();
+        pair = (Map.Entry) iterator.next();
+        hour = Integer.parseInt(pair.getKey().toString()) - 1;
+        minute = 30;
+        now = Calendar.getInstance();
+        if (now.get(Calendar.DAY_OF_WEEK) == 6) {
+            if (now.get(Calendar.HOUR_OF_DAY) < hour) {
+                //diff bet now and today's 'hour'
+                Calendar c = Calendar.getInstance();
+                c.set(Calendar.HOUR_OF_DAY, hour);
+                c.set(Calendar.MINUTE, minute);
+                c.set(Calendar.SECOND, 0);
+                difference = now.getTimeInMillis() - c.getTimeInMillis();
+            } else {
+                //diff bet now and the next monday's 'hour'
+                Calendar c = Calendar.getInstance();
+                c.set(Calendar.HOUR_OF_DAY, hour);
+                c.set(Calendar.MINUTE, minute);
+                c.set(Calendar.SECOND, 0);
+                difference = c.getTimeInMillis() - now.getTimeInMillis();
+                difference = (AlarmManager.INTERVAL_DAY * 7) - difference;
+            }
+        } else {
+            //diff bet now and the next monday's 'hour'
+            Calendar c = Calendar.getInstance();
+            c.set(Calendar.DAY_OF_WEEK, Calendar.FRIDAY);
+            c.set(Calendar.HOUR_OF_DAY, hour);
+            c.set(Calendar.MINUTE, minute);
+            c.set(Calendar.SECOND, 0);
+            c.add(Calendar.DATE, now.get(Calendar.DAY_OF_WEEK) - 1);
+            difference = c.getTimeInMillis() - now.getTimeInMillis();
+        }
+        alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        intent = new Intent(this, WeatherNotificationService.class);
+        pendingIntent = PendingIntent.getBroadcast(this, 0, intent, 0);
+        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, difference, AlarmManager.INTERVAL_DAY * 7, pendingIntent);
+
+
+        //For Saturday
+        iterator = saturdayOutTimes.entrySet().iterator();
+        pair = (Map.Entry) iterator.next();
+        hour = Integer.parseInt(pair.getKey().toString()) - 1;
+        minute = 30;
+        now = Calendar.getInstance();
+        if (now.get(Calendar.DAY_OF_WEEK) == 6) {
+            if (now.get(Calendar.HOUR_OF_DAY) < hour) {
+                //diff bet now and today's 'hour'
+                Calendar c = Calendar.getInstance();
+                c.set(Calendar.HOUR_OF_DAY, hour);
+                c.set(Calendar.MINUTE, minute);
+                c.set(Calendar.SECOND, 0);
+                difference = now.getTimeInMillis() - c.getTimeInMillis();
+            } else {
+                //diff bet now and the next monday's 'hour'
+                Calendar c = Calendar.getInstance();
+                c.set(Calendar.HOUR_OF_DAY, hour);
+                c.set(Calendar.MINUTE, minute);
+                c.set(Calendar.SECOND, 0);
+                difference = c.getTimeInMillis() - now.getTimeInMillis();
+                difference = (AlarmManager.INTERVAL_DAY * 7) - difference;
+            }
+        } else {
+            //diff bet now and the next monday's 'hour'
+            Calendar c = Calendar.getInstance();
+            c.set(Calendar.DAY_OF_WEEK, Calendar.SATURDAY);
+            c.set(Calendar.HOUR_OF_DAY, hour);
+            c.set(Calendar.MINUTE, minute);
+            c.set(Calendar.SECOND, 0);
+            c.add(Calendar.DATE, now.get(Calendar.DAY_OF_WEEK) - 1);
+            difference = c.getTimeInMillis() - now.getTimeInMillis();
+        }
+        alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        intent = new Intent(this, WeatherNotificationService.class);
+        pendingIntent = PendingIntent.getBroadcast(this, 0, intent, 0);
+        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, difference, AlarmManager.INTERVAL_DAY * 7, pendingIntent);
     }
 
     public LinkedHashMap sortHashMapByValues(HashMap passedMap) {
