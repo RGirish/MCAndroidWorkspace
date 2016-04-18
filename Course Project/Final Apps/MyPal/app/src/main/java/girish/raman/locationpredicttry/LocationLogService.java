@@ -2,6 +2,7 @@ package girish.raman.locationpredicttry;
 
 import android.Manifest;
 import android.app.Service;
+import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -11,13 +12,16 @@ import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.media.AudioManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.IBinder;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
+import android.widget.Toast;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,6 +31,8 @@ import java.util.Locale;
 
 public class LocationLogService extends Service implements LocationListener {
 
+    private final double homeLatitude = 33.42419586;
+    private final double homeLongtitude = -111.94937077;
     SQLiteDatabase db;
 
     public LocationLogService() {
@@ -89,6 +95,34 @@ public class LocationLogService extends Service implements LocationListener {
         }
         db.execSQL("INSERT INTO locationLog VALUES('" + dayOfWeek + "','" + hour + "','" + minute + "','" + latitude + "','" + longitude + "','" + speed + "','" + fullAddress + "','" + day + "','" + month + "', '" + accuracy + "');");
         Log.e("Updated", "Updated");
+
+        checkForProfileChange(location);
+    }
+
+    private void checkForProfileChange(Location location) {
+        Location home = new Location("");
+        home.setLatitude(homeLatitude);
+        home.setLongitude(homeLongtitude);
+        float distanceInMeters = location.distanceTo(home);
+
+        if (distanceInMeters > 100) {
+            Toast.makeText(LocationLogService.this, "Out of Home", Toast.LENGTH_SHORT).show();
+
+            //Switch off Wifi
+            WifiManager wifi = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+            wifi.setWifiEnabled(false);
+
+            //Switch Off bluetooth
+            BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+            if (mBluetoothAdapter.isEnabled()) {
+                mBluetoothAdapter.disable();
+            }
+
+            //Changing phone to loud mode
+            AudioManager am = (AudioManager) getBaseContext().getSystemService(Context.AUDIO_SERVICE);
+            am.setRingerMode(AudioManager.RINGER_MODE_NORMAL);
+            am.setStreamVolume(AudioManager.STREAM_RING, am.getStreamMaxVolume(AudioManager.STREAM_RING), 0);
+        }
     }
 
     @Override
