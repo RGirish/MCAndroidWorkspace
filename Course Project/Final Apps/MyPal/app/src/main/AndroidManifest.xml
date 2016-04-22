@@ -91,31 +91,31 @@
             android:enabled="true"
             android:exported="true" />
 
-        <!--        <receiver
-                    android:name=".CallReceiver"
-                    android:enabled="true"
-                    android:exported="true">
-                    <intent-filter>
-                        <action android:name="android.intent.action.PHONE_STATE" />
-                    </intent-filter>
-                </receiver>-->
+<!--        <receiver
+            android:name=".CallReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.PHONE_STATE" />
+            </intent-filter>
+        </receiver>-->
 
         <service android:name=".ButtonPatternListenerService" />
-
+<!--
         <receiver
             android:name=".BatteryReceiver"
             android:enabled="true"
             android:exported="true">
             <intent-filter>
-                <action android:name="android.intent.action.ACTION_BATTERY_LOW" />
-                <action android:name="android.intent.action.ACTION_BATTERY_OKAY" />
+                <action android:name="android.intent.action.BATTERY_LOW" />
+                <action android:name="android.intent.action.BATTERY_OKAY" />
             </intent-filter>
-        </receiver>
+        </receiver>-->
 
-        <service
+        <!--<service
             android:name=".WhereIsHeListenerService"
             android:enabled="true"
-            android:exported="true" />
+            android:exported="true" />-->
 
     </application>
 

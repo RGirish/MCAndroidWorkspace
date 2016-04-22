@@ -60,6 +60,7 @@ public class LocationLogService extends Service implements LocationListener {
 
     @Override
     public void onLocationChanged(Location location) {
+        Log.e("Time", String.valueOf(Calendar.getInstance().get(Calendar.SECOND)));
         String speed, latitude, longitude, dayOfWeek, hour, minute, day, month, accuracy, fullAddress = "na";
 
         latitude = String.valueOf(location.getLatitude());
