@@ -59,6 +59,8 @@ public class LocationAnalyzeService extends Service {
             month = Integer.parseInt(parts[1]);
         }
         cursor.close();
+        setAlarmsForWeatherUpdates();
+        stopSelf();
     }
 
     private String getNextDay(int day, int month, int year) {
@@ -135,9 +137,7 @@ public class LocationAnalyzeService extends Service {
             }
         }
 
-        setAlarmsForWeatherUpdates();
         cursor.close();
-        stopSelf();
     }
 
     private void setAlarmsForWeatherUpdates() {

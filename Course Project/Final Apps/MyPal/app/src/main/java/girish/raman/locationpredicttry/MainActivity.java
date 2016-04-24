@@ -15,6 +15,7 @@ import android.nfc.NdefMessage;
 import android.nfc.NfcAdapter;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.os.Parcelable;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
@@ -107,6 +108,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         }
 
         startService(new Intent(this, WhereIsHeListenerService.class));
+        startService(new Intent(this, SmartAppOpenSensor.class));
 
         Intent intent = new Intent(this, LocationAnalyzeService.class);
         PendingIntent pendingIntent = PendingIntent.getService(this, 0, intent, 0);
@@ -215,6 +217,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                         return true;
                     }
                     if (deltaY > 0) {
+                        speech.cancel();
                         speech.startListening(recognizerIntent);
                         return true;
                     }
@@ -378,8 +381,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     @Override
     public void onResults(Bundle results) {
-        speech.stopListening();
         Log.i(LOG_TAG, "onResults");
+        speech.stopListening();
         ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
         if (matches != null) {
             if (matches.contains("where is father")) {
@@ -473,4 +476,17 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         }
     }
 
+    public void onclickwhereisfather(View view) {
+        Toast.makeText(MainActivity.this, "One moment...", Toast.LENGTH_SHORT).show();
+        Intent i = new Intent(this, TTSService.class);
+        i.putExtra("textToSpeak", getSharedPreferences("WhereIsHe", MODE_PRIVATE).getString("fathersAddress", "Location Unknown"));
+        startService(i);
+    }
+
+    public void onclickwhereami(View view) {
+        Toast.makeText(MainActivity.this, "One moment...", Toast.LENGTH_SHORT).show();
+        Intent i = new Intent(this, TTSService.class);
+        i.putExtra("textToSpeak", whereAmI());
+        startService(i);
+    }
 }

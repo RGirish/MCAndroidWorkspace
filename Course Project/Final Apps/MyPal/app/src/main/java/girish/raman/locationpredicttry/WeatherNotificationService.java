@@ -12,6 +12,7 @@ import android.location.LocationManager;
 import android.os.IBinder;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
+import android.widget.Toast;
 
 import java.io.IOException;
 import java.util.List;
@@ -46,6 +47,7 @@ public class WeatherNotificationService extends Service implements TaskListener 
                 addresses = geocoder.getFromLocation(latitude, longitude, 1);
                 Address address = addresses.get(0);
                 city = address.getLocality();
+                Toast.makeText(WeatherNotificationService.this, city, Toast.LENGTH_SHORT).show();
                 break;
             }
         } catch (IOException e) {
@@ -56,7 +58,15 @@ public class WeatherNotificationService extends Service implements TaskListener 
 
     @Override
     public void onComplete(String weather) {
-        //TTS for weather
+        String textToSpeak = "Unable to obtain weather update.";
+        if (weather.toLowerCase().contains("rain")) {
+            textToSpeak = "rainy";
+        } else if (weather.toLowerCase().contains("clear")) {
+            textToSpeak = "clear";
+        }
+        Intent i = new Intent(this, TTSService.class);
+        i.putExtra("textToSpeak", "Weather update. The weather is " + textToSpeak);
+        startService(i);
     }
 
     @Override

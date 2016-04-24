@@ -9,11 +9,11 @@ import android.hardware.SensorManager;
 import android.os.IBinder;
 import android.widget.Toast;
 
-public class SensorService extends Service implements SensorEventListener {
+public class SmartAppOpenSensor extends Service implements SensorEventListener {
 
     String position = "flat";
 
-    public SensorService() {
+    public SmartAppOpenSensor() {
     }
 
     @Override
@@ -44,7 +44,7 @@ public class SensorService extends Service implements SensorEventListener {
             }
             if (!(inclination < 25 || inclination > 155) && position.equals("flat") && !(8 <= event.values[2] && event.values[2] <= 13)) {
                 position = "notflat";
-                Toast.makeText(getApplicationContext(), "Device picked up!", Toast.LENGTH_SHORT).show();
+                //Toast.makeText(getApplicationContext(), "Device picked up!", Toast.LENGTH_SHORT).show();
             }
         }
 

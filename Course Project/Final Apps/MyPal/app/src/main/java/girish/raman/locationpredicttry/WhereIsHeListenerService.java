@@ -152,7 +152,7 @@ public class WhereIsHeListenerService extends Service {
                             Log.e("Father is near", "Father is near");
                             Intent i = new Intent(WhereIsHeListenerService.this, TTSService.class);
                             i.putExtra("textToSpeak", "Alert - Father is near");
-                            startService(i);
+                            //startService(i);
                         }
                     }
 
