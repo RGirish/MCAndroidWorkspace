@@ -44,10 +44,10 @@ public class SmartAppOpenSensor extends Service implements SensorEventListener {
             }
             if (!(inclination < 25 || inclination > 155) && position.equals("flat") && !(8 <= event.values[2] && event.values[2] <= 13)) {
                 position = "notflat";
-                /*Toast.makeText(getApplicationContext(), "Device picked up!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(), "Device picked up!", Toast.LENGTH_SHORT).show();
                 Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                startActivity(intent);*/
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                startActivity(intent);
             }
         }
     }
